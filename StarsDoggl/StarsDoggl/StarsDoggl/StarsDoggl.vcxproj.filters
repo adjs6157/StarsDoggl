@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\StarsGraphy">
+      <UniqueIdentifier>{86ac4a32-7522-4d84-aad7-7db2e73d6f44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\StarsGraphy\ScreenShot">
+      <UniqueIdentifier>{0b4509c2-b5fa-4ac4-8e22-b95d1906e1e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\StarsControl">
+      <UniqueIdentifier>{02a3a87f-d3ff-467d-842d-ff6010ee28a0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StarsGraphy.cpp">
+      <Filter>Source Files\StarsGraphy</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenShotDDRAW.cpp">
+      <Filter>Source Files\StarsGraphy\ScreenShot</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenShotDXGI.cpp">
+      <Filter>Source Files\StarsGraphy\ScreenShot</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenShotGDI.cpp">
+      <Filter>Source Files\StarsGraphy\ScreenShot</Filter>
+    </ClCompile>
+    <ClCompile Include="StarsControl.cpp">
+      <Filter>Source Files\StarsControl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StarsGraphy.h">
+      <Filter>Source Files\StarsGraphy</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenShotDDRAW.h">
+      <Filter>Source Files\StarsGraphy\ScreenShot</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenShotDXGI.h">
+      <Filter>Source Files\StarsGraphy\ScreenShot</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenShotGDI.h">
+      <Filter>Source Files\StarsGraphy\ScreenShot</Filter>
+    </ClInclude>
+    <ClInclude Include="StarsControl.h">
+      <Filter>Source Files\StarsControl</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
