@@ -8,9 +8,9 @@ public:
 	ScreenShotDXGI();
 	~ScreenShotDXGI();
 
-	virtual bool Initalize();
-	virtual bool Finitalize();
-	virtual bool CaptureScreen(void *pImgData, INT &nImgSize);
+	bool Initalize();
+	bool Finitalize();
+	bool CaptureScreen(void *pImgData, INT &nImgSize);
 
 private:
 	ID3D11Device           *m_hDevice;

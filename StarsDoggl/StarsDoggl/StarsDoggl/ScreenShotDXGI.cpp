@@ -8,8 +8,8 @@
 
 #define RESET_OBJECT(obj) { if(obj) obj->Release(); obj = NULL; }
 
-int iWidth = 0;
-int iHeight = 0;
+extern int iScreenShotWidth;
+extern int iScreenShotHeight;
 
 ScreenShotDXGI::ScreenShotDXGI()
 {
@@ -99,15 +99,15 @@ bool ScreenShotDXGI::Initalize()
 	//
 	// get output description struct
 	//
+	DXGI_OUTPUT_DESC        m_dxgiOutDesc;
 	hDxgiOutput->GetDesc(&m_dxgiOutDesc);
-	iWidth = m_dxgiOutDesc.DesktopCoordinates.right - m_dxgiOutDesc.DesktopCoordinates.left;
-	iHeight = m_dxgiOutDesc.DesktopCoordinates.bottom - m_dxgiOutDesc.DesktopCoordinates.top;
-
+	iScreenShotWidth = m_dxgiOutDesc.DesktopCoordinates.right - m_dxgiOutDesc.DesktopCoordinates.left;
+	iScreenShotHeight = m_dxgiOutDesc.DesktopCoordinates.bottom - m_dxgiOutDesc.DesktopCoordinates.top;
 	//
 	// QI for Output 1
 	//
 	IDXGIOutput1 *hDxgiOutput1 = NULL;
-	hr = hDxgiOutput->QueryInterface(__uuidof(hDxgiOutput1), reinterpret_cast<void**>(&hDxgiOutput1));
+	hr = hDxgiOutput->QueryInterface(__uuidof(IDXGIOutput1), reinterpret_cast<void**>(&hDxgiOutput1));
 	RESET_OBJECT(hDxgiOutput);
 	if (FAILED(hr))
 	{
@@ -238,7 +238,7 @@ bool ScreenShotDXGI::CaptureScreen(void *pImgData, INT &nImgSize)
 	//
 	DXGI_MAPPED_RECT mappedRect;
 	hr = hStagingSurf->Map(&mappedRect, DXGI_MAP_READ);
-	int imgSize = iWidth * iHeight * 4;
+	int imgSize = iScreenShotWidth * iScreenShotHeight * 4;
 	if (SUCCEEDED(hr))
 	{
 		nImgSize = imgSize;

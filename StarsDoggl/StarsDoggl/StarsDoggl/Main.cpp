@@ -5,12 +5,14 @@
 #include <map>
 #include <vector>
 #include <string>
+#include "StarsGraphy.h"
 
 HWND				g_hGameWnd = NULL;
 int					g_iWidth = 400;
 int					g_iHeight = 300;
 ULONG_PTR			g_uiToken = 0;
 HINSTANCE			g_hInstance = 0;
+StarsGraphy			g_kStarsGraphy;
 
 HWND g_hButtonCurrPut = 0;
 HWND g_hButtonAltStopAttack = 0;
@@ -185,6 +187,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	g_hInstance = hInstance;
 
+	if (!g_kStarsGraphy.Initalize())
+	{
+		MessageBoxA(NULL, "g_kStarsGraphy³õÊ¼»¯Ê§°Ü", "Warning", MB_OK);
+	}
+
 	MSG msg;
 	while (true)
 	{
@@ -205,7 +212,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		static int s_iFrameTime = timeGetTime();
 
 		int iDeltaTime = timeGetTime() - s_iFrameTime;
-		iDeltaTime = 33 - iDeltaTime;
+		iDeltaTime = 100 - iDeltaTime;
 
 		if (iDeltaTime > 0)
 		{
@@ -213,7 +220,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		s_iFrameTime = timeGetTime();
+
+		g_kStarsGraphy.Update();
 	}
+
+	g_kStarsGraphy.Finitalize();
 
 	return true;
 }
