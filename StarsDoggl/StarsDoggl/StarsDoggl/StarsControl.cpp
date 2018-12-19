@@ -96,7 +96,7 @@ bool StarsControl::Finitalize()
 
 void StarsControl::Update()
 {
-	//MakeKeyDown('A');
+	MakeKeyDown('A');
 	//MakeKeyDownEx(VK_RIGHT);
 }
 

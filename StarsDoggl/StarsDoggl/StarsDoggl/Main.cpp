@@ -5,16 +5,15 @@
 #include <map>
 #include <vector>
 #include <string>
-#include "StarsGraphy.h"
-#include "StarsControl.h"
+#include "StarsGamePlayer.h"
 
 HWND				g_hGameWnd = NULL;
 int					g_iWidth = 400;
 int					g_iHeight = 300;
 ULONG_PTR			g_uiToken = 0;
 HINSTANCE			g_hInstance = 0;
-StarsGraphy			g_kStarsGraphy;
-StarsControl		g_kStarsControl;
+
+StarsGamePlayer g_kGamePlayer;
 
 HWND g_hButtonCurrPut = 0;
 HWND g_hButtonAltStopAttack = 0;
@@ -189,15 +188,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	g_hInstance = hInstance;
 
-	if (!g_kStarsGraphy.Initalize())
+	if (!g_kGamePlayer.Initalize())
 	{
-		MessageBoxA(NULL, "g_kStarsGraphy初始化失败", "Warning", MB_OK);
-		return 0;
-	}
-
-	if (!g_kStarsControl.Initalize())
-	{
-		MessageBoxA(NULL, "g_kStarsControl初始化失败", "Warning", MB_OK);
+		MessageBoxA(NULL, "g_kGamePlayer初始化失败", "Warning", MB_OK);
 		return 0;
 	}
 
@@ -230,12 +223,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		s_iFrameTime = timeGetTime();
 
-		g_kStarsGraphy.Update();
-		g_kStarsControl.Update();
+		g_kGamePlayer.Update();
 	}
-
-	g_kStarsGraphy.Finitalize();
-	g_kStarsControl.Finitalize();
+	g_kGamePlayer.Finitalize();
 
 	return true;
 }

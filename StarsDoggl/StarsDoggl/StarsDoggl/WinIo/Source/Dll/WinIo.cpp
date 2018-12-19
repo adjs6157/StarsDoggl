@@ -84,9 +84,9 @@ bool GetDriverPath()
 		return false;
 
 	if (g_Is64BitOS)
-		wcscat(szWinIoDriverPath, L"winio64.sys");
+		wcscat(szWinIoDriverPath, L"starsio64.sys");
 	else
-		wcscat(szWinIoDriverPath, L"winio32.sys");
+		wcscat(szWinIoDriverPath, L"starsio32.sys");
 
 	return true;
 }

@@ -34,6 +34,9 @@
     <ClCompile Include="StarsControl.cpp">
       <Filter>Source Files\StarsControl</Filter>
     </ClCompile>
+    <ClCompile Include="StarsGamePlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StarsGraphy.h">
@@ -53,6 +56,9 @@
     </ClInclude>
     <ClInclude Include="StarsUtility.h">
       <Filter>Source Files\StarsGraphy</Filter>
+    </ClInclude>
+    <ClInclude Include="StarsGamePlayer.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

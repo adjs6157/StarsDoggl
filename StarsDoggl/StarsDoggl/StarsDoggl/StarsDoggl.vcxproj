@@ -95,7 +95,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;gdi32.lib;Gdiplus.lib;Dxgi.lib;d3d11.lib;Ddraw.lib;WinIo.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;gdi32.lib;Gdiplus.lib;Dxgi.lib;d3d11.lib;Ddraw.lib;StarsIo.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,6 +133,7 @@
     <ClCompile Include="ScreenShotDDRAW.cpp" />
     <ClCompile Include="ScreenShotDXGI.cpp" />
     <ClCompile Include="ScreenShotGDI.cpp" />
+    <ClCompile Include="StarsGamePlayer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StarsControl.h" />
@@ -140,6 +141,7 @@
     <ClInclude Include="ScreenShotDDRAW.h" />
     <ClInclude Include="ScreenShotDXGI.h" />
     <ClInclude Include="ScreenShotGDI.h" />
+    <ClInclude Include="StarsGamePlayer.h" />
     <ClInclude Include="StarsUtility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
