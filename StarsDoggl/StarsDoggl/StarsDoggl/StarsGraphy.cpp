@@ -7,6 +7,8 @@
 int iScreenShotWidth;
 int iScreenShotHeight;
 
+#define BACK_COLOR 0xFFFF00FF
+
 StarsGraphy::StarsGraphy()
 {
 	m_pkScreenShotDDRAW = new ScreenShotDDRAW();
@@ -55,18 +57,31 @@ bool StarsGraphy::Finitalize()
 
 void StarsGraphy::Update()
 {
+	if (timeGetTime() - m_iLastUpdateTime < 100)
+	{
+		return;
+	}
+
+	m_iLastUpdateTime = timeGetTime();
+
 	m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
-	RotateImg(m_pkScreenShotData);
+	//RotateImg(m_pkScreenShotData);
+	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
+
+	ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 }
 
-POINT StarsGraphy::FindPicture(std::string kPictureName, RECT kRect)
+ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
 {
-	POINT kPoint;
+	ST_POS kPoint;
 	kPoint.x = -1; kPoint.y = -1;
 	std::map<std::string, GamePictureInfo>::iterator itr = m_akPicture.find(kPictureName);
 	if (itr == m_akPicture.end())
 	{
-		MessageBoxA(NULL, "FindPicture失败", "Warning", MB_OK);
+		std::string kStr = "FindPicture图片未加载:";
+		kStr += kPictureName;
+		MessageBoxA(NULL, kStr.c_str(), "Warning", MB_OK);
+		return kPoint;
 	}
 
 	ComPareImageNormal(kRect.left, kRect.right, kRect.top, kRect.bottom, itr->second);
@@ -99,11 +114,20 @@ void StarsGraphy::LoadLocalPicture()
 			kGamePictureInfo.iPixelWidth = bitMapIcon.bmWidth;
 			kGamePictureInfo.iPixelHeight = bitMapIcon.bmHeight;
 			kGamePictureInfo.aiPixelData = new DWORD[bitMapIcon.bmWidth * bitMapIcon.bmHeight];
-			for (int i = 0; i < bitMapIcon.bmWidth; ++i)
+			for (int i = 0; i < bitMapIcon.bmHeight; ++i)
 			{
-				for (int j = 0; j < bitMapIcon.bmHeight; ++j)
+				for (int j = 0; j < bitMapIcon.bmWidth; ++j)
 				{
-					kGamePictureInfo.aiPixelData[i * bitMapIcon.bmHeight + j] = GetPixel(hdcIcon, i, j);
+					DWORD color = GetPixel(hdcIcon, j, i);
+					DWORD r = color & 0x000000FF;
+					DWORD g = (color >> 8) & 0x000000FF;
+					DWORD b = (color >> 16) & 0x000000FF;
+					color = (r << 16) | (g << 8) | b | 0xFF000000;
+					kGamePictureInfo.aiPixelData[i * bitMapIcon.bmWidth + j] = color;
+					if (color != BACK_COLOR)
+					{
+						kGamePictureInfo.iPixelCount++;
+					}
 				}
 			}
 			DeleteDC(hdcIcon);
@@ -120,7 +144,7 @@ void StarsGraphy::LoadLocalPicture()
 
 void StarsGraphy::RotateImg(DWORD *pImgData)
 {
-	DWORD* pImg32 = pImgData;
+	/*DWORD* pImg32 = pImgData;
 	for (int i = 0; i < m_iImgDataSize; ++i) {
 		m_pkRotateImg32[i] = pImg32[m_iImgDataSize - i - 1];
 	}
@@ -130,22 +154,34 @@ void StarsGraphy::RotateImg(DWORD *pImgData)
 		for (int j = 0; j < iScreenShotWidth; ++j) {
 			pRotateImg32_r[j + i * iScreenShotWidth] = m_pkRotateImg32[iScreenShotWidth - j - 1 + i * iScreenShotWidth];
 		}
+	}*/
+
+	DWORD* pImg32 = pImgData;
+	for (int i = 0; i < m_iImgDataSize; ++i) {
+		m_pkRotateImg32[i] = pImg32[i];
+	}
+
+	DWORD* pRotateImg32_r = pImgData;
+	for (int i = 0; i < iScreenShotHeight; ++i) {
+		for (int j = 0; j < iScreenShotWidth; ++j) {
+			pRotateImg32_r[j + i * iScreenShotWidth] = m_pkRotateImg32[j + (iScreenShotHeight - 1 - i) * iScreenShotWidth];
+		}
 	}
 }
 
-void StarsGraphy::SaveBmpFile(const char *fileName, unsigned char *pImgData, int imgLength)
+void StarsGraphy::SaveBmpFile(const char *fileName, DWORD *pImgData, int iWidth, int iHeight)
 {
 	BITMAPFILEHEADER bmheader;
 	memset(&bmheader, 0, sizeof(bmheader));
 	bmheader.bfType = 0x4d42;     //图像格式。必须为'BM'格式。  
 	bmheader.bfOffBits = sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER); //从文件开头到数据的偏移量  
-	bmheader.bfSize = imgLength + bmheader.bfOffBits;//文件大小  
+	bmheader.bfSize = iWidth * iHeight * 4 + bmheader.bfOffBits;//文件大小  
 
 	BITMAPINFOHEADER bmInfo;
 	memset(&bmInfo, 0, sizeof(bmInfo));
 	bmInfo.biSize = sizeof(bmInfo);
-	bmInfo.biWidth = iScreenShotWidth;
-	bmInfo.biHeight = iScreenShotHeight;
+	bmInfo.biWidth = iWidth;
+	bmInfo.biHeight = iHeight;
 	bmInfo.biPlanes = 1;
 	bmInfo.biBitCount = 32;
 	bmInfo.biCompression = BI_RGB;
@@ -157,7 +193,7 @@ void StarsGraphy::SaveBmpFile(const char *fileName, unsigned char *pImgData, int
 		assert(TRUE == bRet);
 		bRet = WriteFile(hFile, &bmInfo, sizeof(BITMAPINFOHEADER), &dwWritten, NULL);
 		assert(TRUE == bRet);
-		bRet = WriteFile(hFile, pImgData, imgLength, &dwWritten, NULL);
+		bRet = WriteFile(hFile, pImgData, iWidth * iHeight * 4, &dwWritten, NULL);
 		assert(TRUE == bRet);
 		CloseHandle(hFile);
 	}
@@ -196,24 +232,41 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 {
 	akGamePictureInfo.fComPareRate = 0;
 
-	for (int i = iBeginX; i < iEndX; ++i)
+	for (int i = iBeginY; i < iEndY; ++i)
 	{
 		bool iComPareSucess = false;
-		for (int j = iBeginY; j < iEndY; ++j)
+		for (int j = iBeginX; j < iEndX; ++j)
 		{
 			int iPixelPass = 0;
-			for (int k = 0; k < akGamePictureInfo.iPixelWidth; ++k)
+			for (int k = 0; k < akGamePictureInfo.iPixelHeight; ++k)
 			{
-				for (int l = 0; l < akGamePictureInfo.iPixelHeight; ++l)
+				for (int l = 0; l < akGamePictureInfo.iPixelWidth; ++l)
 				{
-					if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelHeight + l] == m_pkScreenShotData[i + k * iScreenShotWidth + j + l])
+					//DWORD r1 = akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] & 0x000000FF;
+					//DWORD g1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 8) & 0x000000FF;
+					//DWORD b1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 16) & 0x000000FF;
+					//DWORD a1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 24) & 0x000000FF;
+
+					//DWORD r2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)]) & 0x000000FF;
+					//DWORD g2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 8) & 0x000000FF;
+					//DWORD b2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 16) & 0x000000FF;
+					//DWORD a2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 24) & 0x000000FF;
+
+					if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] == BACK_COLOR)
+					{
+						continue;
+					}
+
+					if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] == m_pkScreenShotData[(i + k) * iScreenShotWidth + (j + l)])
 					{
 						iPixelPass++;
 					}
 				}
 			}
 
-			float fComPareRate = iPixelPass * 1.0f / akGamePictureInfo.iPixelWidth / akGamePictureInfo.iPixelHeight;
+			//m_pkRotateImg32[i * iEndX + j] = m_pkScreenShotData[(i) * iScreenShotWidth + (j)];
+
+			float fComPareRate = iPixelPass * 1.0f / akGamePictureInfo.iPixelCount;
 			if (fComPareRate > akGamePictureInfo.fComPareRate)
 			{
 				akGamePictureInfo.fComPareRate = fComPareRate;
@@ -228,4 +281,7 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 		}
 		if (iComPareSucess) break;
 	}
+
+	//SaveBmpFile("compare1.bmp", akGamePictureInfo.aiPixelData, akGamePictureInfo.iPixelWidth, akGamePictureInfo.iPixelHeight);
+	//SaveBmpFile("compare2.bmp", m_pkRotateImg32, iEndX, iEndY);
 }

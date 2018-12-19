@@ -51,5 +51,8 @@
     <ClInclude Include="StarsControl.h">
       <Filter>Source Files\StarsControl</Filter>
     </ClInclude>
+    <ClInclude Include="StarsUtility.h">
+      <Filter>Source Files\StarsGraphy</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 #include "ScreenShotDXGI.h"
 #include "ScreenShotDDRAW.h"
+#include "StarsUtility.h"
 #include <string>
 #include <map>
 #include <vector>
@@ -14,6 +15,7 @@ struct GamePictureInfo
 		iPixelWidth = 0;
 		iPixelHeight = 0;
 		aiPixelData = NULL;
+		iPixelCount = 0;
 	}
 	~GamePictureInfo()
 	{
@@ -28,6 +30,7 @@ struct GamePictureInfo
 	float fComPareRate;
 	int iPixelWidth;
 	int iPixelHeight;
+	int iPixelCount;
 	DWORD* aiPixelData;
 };
 
@@ -41,11 +44,11 @@ public:
 	bool Finitalize();
 	void Update();
 
-	POINT FindPicture(std::string kPictureName, RECT kRect);
+	ST_POS FindPicture(std::string kPictureName, ST_RECT kRect);
 	
 private:
 	void RotateImg(DWORD *pImgData);
-	void SaveBmpFile(const char *fileName, unsigned char *pImgData, int imgLength);
+	void SaveBmpFile(const char *fileName, DWORD *pImgData, int iWidth, int iHeight);
 	void LoadLocalPicture();
 	void GetFiles(std::string path, std::vector<std::string>& filePaths, std::vector<std::string>& fileNames);
 	void ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& akGamePictureInfo);

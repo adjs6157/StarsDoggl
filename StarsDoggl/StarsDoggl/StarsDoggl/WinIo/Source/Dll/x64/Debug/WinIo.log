@@ -1,0 +1,37 @@
+﻿Build started 2018/12/9 18:55:25.
+     1>Project "H:\MyGameProject\WinIO\WinIo\Source\Dll\WinIo.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         E:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /Od /D WINIO_DLL /D _WINDLL /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"x64\Debug\\" /Fd"x64\Debug\vc120.pdb" /Gd /TP /errorReport:prompt InstDrv.cpp Phys32.cpp Port32.cpp WinIo.cpp
+         WinIo.cpp
+     1>WinIo.cpp(87): warning C4996: 'wcscat': This function or variable may be unsafe. Consider using wcscat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 E:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\string.h(284) : see declaration of 'wcscat'
+     1>WinIo.cpp(89): warning C4996: 'wcscat': This function or variable may be unsafe. Consider using wcscat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 E:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\string.h(284) : see declaration of 'wcscat'
+     1>WinIo.cpp(100): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+         Port32.cpp
+     1>Port32.cpp(31): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+     1>Port32.cpp(92): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+         Phys32.cpp
+         InstDrv.cpp
+     1>InstDrv.cpp(80): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+     1>InstDrv.cpp(86): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+     1>InstDrv.cpp(98): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+     1>InstDrv.cpp(155): warning C4800: 'BOOL' : forcing value to bool 'true' or 'false' (performance warning)
+         Generating Code...
+       ResourceCompile:
+         C:\Program Files (x86)\Windows Kits\8.1\bin\x86\rc.exe /D _UNICODE /D UNICODE /l"0x0409" /nologo /fo"x64\Debug\WinIo.res" WinIo.rc 
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1186,5): warning MSB8012: TargetPath(H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo.dll) does not match the Linker's OutputFile property value (H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo64.dll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1188,5): warning MSB8012: TargetName(WinIo) does not match the Linker's OutputFile property value (WinIo64). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+       Link:
+         E:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo64.dll" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:".\WinIo.def" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE:NO /IMPLIB:"H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo.lib" /MACHINE:X64 /DLL x64\Debug\WinIo.res
+         x64\Debug\InstDrv.obj
+         x64\Debug\Phys32.obj
+         x64\Debug\Port32.obj
+         x64\Debug\WinIo.obj
+            Creating library H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo.lib and object H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo.exp
+         WinIo.vcxproj -> H:\MyGameProject\WinIO\WinIo\Source\Dll\x64\Debug\WinIo.dll
+     1>Done Building Project "H:\MyGameProject\WinIO\WinIo\Source\Dll\WinIo.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.80
