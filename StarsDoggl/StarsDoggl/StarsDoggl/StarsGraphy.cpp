@@ -3,10 +3,6 @@
 #include <strsafe.h>
 #include <assert.h>
 #include <io.h>
-#include <opencv2/core/core.hpp> 
-#include <opencv2/highgui/highgui.hpp> 
-#include <opencv2/imgproc/imgproc.hpp> 
-#include <opencv2/features2d/features2d.hpp>
 
 int iScreenShotWidth;
 int iScreenShotHeight;
@@ -22,6 +18,7 @@ StarsGraphy::StarsGraphy()
 StarsGraphy::~StarsGraphy()
 {
 	delete m_pkScreenShotDDRAW;
+	delete m_pkORBTool;
 }
 
 bool StarsGraphy::Initalize()
@@ -37,6 +34,13 @@ bool StarsGraphy::Initalize()
 	{
 		return false;
 	}
+
+	m_pkORBTool = new cv::ORB(5000, 1.2f, 1, 3, 0, 2, 0, 31);
+	m_pkMatcher = new cv::BFMatcher(cv::NORM_HAMMING);
+
+	m_kScreenORBInfo.aiPixelData = new unsigned char[iScreenShotWidth * iScreenShotHeight * 3];
+	m_kScreenORBInfo.img = new cv::Mat(iScreenShotHeight, iScreenShotWidth, CV_8UC3, m_kScreenORBInfo.aiPixelData);
+	m_kScreenORBInfo.descriptors = new cv::Mat();
 
 	LoadLocalPicture();
 
@@ -68,38 +72,70 @@ void StarsGraphy::Update()
 
 	m_iLastUpdateTime = timeGetTime();
 
-	//m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
+	m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
+	for (int i = 0; i < iScreenShotHeight; ++i)
+	{
+		for (int j = 0; j < iScreenShotWidth; ++j)
+		{
+			int iIndex1 = (i * iScreenShotWidth + j) * 3;
+			int iIndex2 = (i * iScreenShotWidth + j) * 4;
+			m_kScreenORBInfo.aiPixelData[iIndex1] = ((unsigned char*)m_pkScreenShotData)[iIndex2 + 0];
+			m_kScreenORBInfo.aiPixelData[iIndex1 + 1] = ((unsigned char*)m_pkScreenShotData)[iIndex2 + 1];
+			m_kScreenORBInfo.aiPixelData[iIndex1 + 2] = ((unsigned char*)m_pkScreenShotData)[iIndex2 + 2];
+		}
+	}
+
+
+	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints);
+	m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
+
 	//RotateImg(m_pkScreenShotData);
 	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
 
 	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
-	cv::Mat img_1 = cv::imread("test1.png");
-	cv::Mat img_2 = cv::imread("test3.png");
+	FIndPictureORB("test3.bmp", ST_RECT(0, 800, 0, 600));
 
-	// -- Step 1: Detect the keypoints using STAR Detector 
-	std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
-	cv::ORB orb;
-	orb.detect(img_1, keypoints_1);
-	orb.detect(img_2, keypoints_2);
 
-	// -- Stpe 2: Calculate descriptors (feature vectors) 
-	cv::Mat descriptors_1, descriptors_2;
-	orb.compute(img_1, keypoints_1, descriptors_1);
-	orb.compute(img_2, keypoints_2, descriptors_2);
+	cv::Mat img_1 = cv::imread("test5.bmp");
+	//cv::Mat img_2 = cv::imread("test3.png");
 
-	//-- Step 3: Matching descriptor vectors with a brute force matcher 
-	cv::BFMatcher matcher(cv::NORM_HAMMING);
-	std::vector<cv::DMatch> mathces;
-	matcher.match(descriptors_1, descriptors_2, mathces);
-	// -- dwaw matches 
-	cv::Mat img_mathes;
-	drawMatches(img_1, keypoints_1, img_2, keypoints_2, mathces, img_mathes);
-	// -- show 
-	cv::imshow("Mathces", img_mathes);
+	//// -- Step 1: Detect the keypoints using STAR Detector 
+	//std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+	//cv::ORB orb(5000, 1.2f, 1, 3, 0, 2, 0, 31);
+	//orb.detect(img_1, keypoints_1);
+	//orb.detect(img_2, keypoints_2);
 
-	cv::waitKey(0);
+	//// -- Stpe 2: Calculate descriptors (feature vectors) 
+	//cv::Mat descriptors_1, descriptors_2;
+	//orb.compute(img_1, keypoints_1, descriptors_1);
+	//orb.compute(img_2, keypoints_2, descriptors_2);
 
+	////-- Step 3: Matching descriptor vectors with a brute force matcher 
+	//cv::BFMatcher matcher(cv::NORM_HAMMING);
+	//std::vector<cv::DMatch> mathces;
+	//std::vector<std::vector<cv::DMatch>> mathceskn;
+	//matcher.knnMatch(descriptors_1, descriptors_2, mathceskn, 2);
+
+	//for (int i = 0; i < (int)mathceskn.size(); i++)
+	//{
+	//	cv::DMatch bestMatch = mathceskn[i][0];
+	//	cv::DMatch betterMatch = mathceskn[i][1];
+	//	cv::Point p1 = keypoints_1[bestMatch.queryIdx].pt;
+	//	cv::Point p2 = keypoints_2[bestMatch.trainIdx].pt;
+	//	float distance = sqrt((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y));
+	//	float distanceRatio = bestMatch.distance / betterMatch.distance;
+
+	//	if (distanceRatio < 0.8/* && distance < 50*/)
+	//	{
+	//		mathces.push_back(bestMatch);
+	//	}
+	//}
+	//// -- dwaw matches 
+	//cv::Mat img_mathes;
+	//drawMatches(img_1, keypoints_1, img_2, keypoints_2, mathces, img_mathes);
+	//// -- show 
+	//cv::imshow("Mathces", img_mathes);
 }
 
 ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
@@ -125,6 +161,51 @@ ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
 	return kPoint;
 }
 
+ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName, ST_RECT kRect)
+{
+	ST_POS kPoint;
+	kPoint.x = -1; kPoint.y = -1;
+
+	std::map<std::string, GameORBInfo>::iterator itr = m_akORBInfo.find(kPictureName);
+	if (itr == m_akORBInfo.end())
+	{
+		std::string kStr = "FIndPictureORBÍ¼Æ¬Î´¼ÓÔØ:";
+		kStr += kPictureName;
+		MessageBoxA(NULL, kStr.c_str(), "Warning", MB_OK);
+		return kPoint;
+	}
+
+	cv::Rect r1(kRect.left, kRect.top, kRect.right - kRect.left, kRect.bottom - kRect.top);
+	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
+	mask(r1).setTo(255);
+
+	std::vector<cv::DMatch> mathces;
+	std::vector<std::vector<cv::DMatch>> mathceskn;
+	m_pkMatcher->knnMatch(*(itr->second.descriptors), *(m_kScreenORBInfo.descriptors), mathceskn, 2, mask);
+
+	for (int i = 0; i < (int)mathceskn.size(); i++)
+	{
+		cv::DMatch bestMatch = mathceskn[i][0];
+		cv::DMatch betterMatch = mathceskn[i][1];
+		cv::Point p1 = itr->second.keypoints[bestMatch.queryIdx].pt;
+		cv::Point p2 = m_kScreenORBInfo.keypoints[bestMatch.trainIdx].pt;
+		float distance = sqrt((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y));
+		float distanceRatio = bestMatch.distance / betterMatch.distance;
+
+		if (distanceRatio < 0.8/* && distance < 50*/)
+		{
+			mathces.push_back(bestMatch);
+		}
+	}
+
+	// -- dwaw matches 
+	cv::Mat img_mathes;
+	drawMatches(*(itr->second.img), itr->second.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
+	// -- show 
+	cv::imshow("Mathces", img_mathes);
+
+}
+
 void StarsGraphy::LoadLocalPicture()
 {
 	std::vector<std::string> akPicturePath;
@@ -145,6 +226,9 @@ void StarsGraphy::LoadLocalPicture()
 			GetObject(hBitMapIcon, sizeof(BITMAP), &bitMapIcon);
 			SelectObject(hdcIcon, hBitMapIcon);
 
+			GameORBInfo& kGameORBInfo = m_akORBInfo[akPictureName[i]];
+			kGameORBInfo.aiPixelData = new unsigned char[bitMapIcon.bmHeight * bitMapIcon.bmWidth * 3];
+
 			GamePictureInfo& kGamePictureInfo = m_akPicture[akPictureName[i]];
 			kGamePictureInfo.iPixelWidth = bitMapIcon.bmWidth;
 			kGamePictureInfo.iPixelHeight = bitMapIcon.bmHeight;
@@ -154,19 +238,27 @@ void StarsGraphy::LoadLocalPicture()
 				for (int j = 0; j < bitMapIcon.bmWidth; ++j)
 				{
 					DWORD color = GetPixel(hdcIcon, j, i);
-					DWORD r = color & 0x000000FF;
+					DWORD b = color & 0x000000FF;
 					DWORD g = (color >> 8) & 0x000000FF;
-					DWORD b = (color >> 16) & 0x000000FF;
-					color = (r << 16) | (g << 8) | b | 0xFF000000;
+					DWORD r = (color >> 16) & 0x000000FF;
+					color = (b << 16) | (g << 8) | r | 0xFF000000;
 					kGamePictureInfo.aiPixelData[i * bitMapIcon.bmWidth + j] = color;
 					if (color != BACK_COLOR)
 					{
 						kGamePictureInfo.iPixelCount++;
 					}
+					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3] = (unsigned char)r;
+					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3 + 1] = (unsigned char)g;
+					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3 + 2] = (unsigned char)b;
 				}
 			}
 			DeleteDC(hdcIcon);
 			::DeleteObject(hBitMapIcon);
+			
+			kGameORBInfo.img = new cv::Mat(bitMapIcon.bmHeight, bitMapIcon.bmWidth, CV_8UC3, kGameORBInfo.aiPixelData);
+			kGameORBInfo.descriptors = new cv::Mat();
+			m_pkORBTool->detect(*(kGameORBInfo.img), kGameORBInfo.keypoints);
+			m_pkORBTool->compute(*(kGameORBInfo.img), kGameORBInfo.keypoints, *(kGameORBInfo.descriptors));
 		}
 		else
 		{
