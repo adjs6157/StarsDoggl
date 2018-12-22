@@ -22,6 +22,7 @@ HWND g_hButtonAutoFish = 0;
 HWND g_hButtonOD = 0;
 
 int* iTest = 0;
+bool g_bClose = false;
 void CreateControl(HWND hWnd)
 {
 	g_hButtonCurrPut = (HWND)CreateWindow(TEXT("Button"),  //Button是预定义 窗体类
@@ -130,6 +131,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ProcessControl(hWnd, wParam);
 			DefWindowProc(hWnd, message, wParam, lParam);
 			break;
+		case WM_CLOSE:
+			g_bClose = true;
+			break;
 		default:
 		{
 			return DefWindowProc(hWnd, message, wParam, lParam);
@@ -197,6 +201,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MSG msg;
 	while (true)
 	{
+		if (g_bClose)
+		{
+			break;
+		}
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)

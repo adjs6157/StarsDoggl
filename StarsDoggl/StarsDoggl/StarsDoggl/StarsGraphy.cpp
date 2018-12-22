@@ -3,6 +3,10 @@
 #include <strsafe.h>
 #include <assert.h>
 #include <io.h>
+#include <opencv2/core/core.hpp> 
+#include <opencv2/highgui/highgui.hpp> 
+#include <opencv2/imgproc/imgproc.hpp> 
+#include <opencv2/features2d/features2d.hpp>
 
 int iScreenShotWidth;
 int iScreenShotHeight;
@@ -64,11 +68,38 @@ void StarsGraphy::Update()
 
 	m_iLastUpdateTime = timeGetTime();
 
-	m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
+	//m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
 	//RotateImg(m_pkScreenShotData);
 	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
 
-	ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
+	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
+
+	cv::Mat img_1 = cv::imread("test1.png");
+	cv::Mat img_2 = cv::imread("test3.png");
+
+	// -- Step 1: Detect the keypoints using STAR Detector 
+	std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+	cv::ORB orb;
+	orb.detect(img_1, keypoints_1);
+	orb.detect(img_2, keypoints_2);
+
+	// -- Stpe 2: Calculate descriptors (feature vectors) 
+	cv::Mat descriptors_1, descriptors_2;
+	orb.compute(img_1, keypoints_1, descriptors_1);
+	orb.compute(img_2, keypoints_2, descriptors_2);
+
+	//-- Step 3: Matching descriptor vectors with a brute force matcher 
+	cv::BFMatcher matcher(cv::NORM_HAMMING);
+	std::vector<cv::DMatch> mathces;
+	matcher.match(descriptors_1, descriptors_2, mathces);
+	// -- dwaw matches 
+	cv::Mat img_mathes;
+	drawMatches(img_1, keypoints_1, img_2, keypoints_2, mathces, img_mathes);
+	// -- show 
+	cv::imshow("Mathces", img_mathes);
+
+	cv::waitKey(0);
+
 }
 
 ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
@@ -102,6 +133,10 @@ void StarsGraphy::LoadLocalPicture()
 
 	for (int i = 0; i < akPicturePath.size(); ++i)
 	{
+		if (akPictureName[i].find(".bmp") == std::string::npos)
+		{
+			continue;
+		}
 		HBITMAP hBitMapIcon = (HBITMAP)::LoadImageA(NULL, akPicturePath[i].c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 		if (hBitMapIcon != 0)
 		{
