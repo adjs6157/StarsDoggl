@@ -102,12 +102,26 @@ void StarsControl::Update()
 
 void StarsControl::OnKeyDown(DWORD dwKey)
 {
-	MakeKeyDown(dwKey);
+	if (dwKey >= VK_LEFT && dwKey <= VK_DOWN)
+	{
+		MakeKeyDownEx(dwKey);
+	}
+	else
+	{
+		MakeKeyDown(dwKey);
+	}
 }
 
 void StarsControl::OnKeyUp(DWORD dwKey)
 {
-	MakeKeyUp(dwKey);
+	if (dwKey >= VK_LEFT && dwKey <= VK_DOWN)
+	{
+		MakeKeyUpEx(dwKey);
+	}
+	else
+	{
+		MakeKeyUp(dwKey);
+	}
 }
 
 
