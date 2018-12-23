@@ -35,7 +35,7 @@ bool StarsGraphy::Initalize()
 		return false;
 	}
 
-	m_pkORBTool = new cv::ORB(5000, 1.2f, 1, 3, 0, 2, 0, 31);
+	m_pkORBTool = new cv::ORB(5000, 1.2f, 1, 3, 0, 2, 0, 21);
 	m_pkMatcher = new cv::BFMatcher(cv::NORM_HAMMING);
 
 	m_kScreenORBInfo.aiPixelData = new unsigned char[iScreenShotWidth * iScreenShotHeight * 3];
@@ -65,7 +65,7 @@ bool StarsGraphy::Finitalize()
 
 void StarsGraphy::Update()
 {
-	if (timeGetTime() - m_iLastUpdateTime < 100)
+	if (timeGetTime() - m_iLastUpdateTime < 300)
 	{
 		return;
 	}
@@ -85,8 +85,11 @@ void StarsGraphy::Update()
 		}
 	}
 
+	cv::Rect r1(0, 480, 800, 600);
+	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
+	mask(r1).setTo(255);
 
-	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints);
+	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
 	m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
 
 	//RotateImg(m_pkScreenShotData);
@@ -94,10 +97,10 @@ void StarsGraphy::Update()
 
 	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
-	FIndPictureORB("test3.bmp", ST_RECT(0, 800, 0, 600));
+	//FIndPictureORB("test3.bmp");
 
 
-	cv::Mat img_1 = cv::imread("test5.bmp");
+	//cv::Mat img_1 = cv::imread("test5.bmp");
 	//cv::Mat img_2 = cv::imread("test3.png");
 
 	//// -- Step 1: Detect the keypoints using STAR Detector 
@@ -161,7 +164,7 @@ ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
 	return kPoint;
 }
 
-ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName, ST_RECT kRect)
+ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 {
 	ST_POS kPoint;
 	kPoint.x = -1; kPoint.y = -1;
@@ -175,13 +178,13 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName, ST_RECT kRect)
 		return kPoint;
 	}
 
-	cv::Rect r1(kRect.left, kRect.top, kRect.right - kRect.left, kRect.bottom - kRect.top);
-	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
-	mask(r1).setTo(255);
+	//cv::Rect r1(kRect.left, kRect.top, kRect.right - kRect.left, kRect.bottom - kRect.top);
+	//cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
+	//mask(r1).setTo(255);
 
 	std::vector<cv::DMatch> mathces;
 	std::vector<std::vector<cv::DMatch>> mathceskn;
-	m_pkMatcher->knnMatch(*(itr->second.descriptors), *(m_kScreenORBInfo.descriptors), mathceskn, 2, mask);
+	m_pkMatcher->knnMatch(*(itr->second.descriptors), *(m_kScreenORBInfo.descriptors), mathceskn, 2);
 
 	for (int i = 0; i < (int)mathceskn.size(); i++)
 	{
@@ -198,11 +201,24 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName, ST_RECT kRect)
 		}
 	}
 
-	// -- dwaw matches 
-	cv::Mat img_mathes;
-	drawMatches(*(itr->second.img), itr->second.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
-	// -- show 
-	cv::imshow("Mathces", img_mathes);
+	if (mathces.size() == 0) return kPoint;
+
+	for (int i = 0; i < mathces.size(); ++i)
+	{
+		kPoint.x += m_kScreenORBInfo.keypoints[mathces[i].trainIdx].pt.x;
+		kPoint.y += m_kScreenORBInfo.keypoints[mathces[i].trainIdx].pt.y;
+	}
+
+	kPoint.x /= mathces.size();
+	kPoint.y /= mathces.size();
+	
+	return kPoint;
+
+	//// -- dwaw matches 
+	//cv::Mat img_mathes;
+	//drawMatches(*(itr->second.img), itr->second.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
+	//// -- show 
+	//cv::imshow("Mathces", img_mathes);
 
 }
 

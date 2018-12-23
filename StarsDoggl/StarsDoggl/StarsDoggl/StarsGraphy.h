@@ -80,12 +80,14 @@ public:
 	void Update();
 
 	ST_POS FindPicture(std::string kPictureName, ST_RECT kRect);
-	ST_POS FIndPictureORB(std::string kPictureName, ST_RECT kRect);
+	ST_POS FIndPictureORB(std::string kPictureName);
+	ST_POS FindFont(std::string kStr, ST_RECT kRect);
 	
 private:
 	void RotateImg(DWORD *pImgData);
 	void SaveBmpFile(const char *fileName, DWORD *pImgData, int iWidth, int iHeight);
 	void LoadLocalPicture();
+	void LoadFont();
 	void GetFiles(std::string path, std::vector<std::string>& filePaths, std::vector<std::string>& fileNames);
 	void ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& akGamePictureInfo);
 
