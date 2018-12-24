@@ -222,6 +222,11 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 
 }
 
+ST_POS StarsGraphy::FindFont(std::string kStr, ST_RECT kRect)
+{
+	return ST_POS(-1, -1);
+}
+
 void StarsGraphy::LoadLocalPicture()
 {
 	std::vector<std::string> akPicturePath;

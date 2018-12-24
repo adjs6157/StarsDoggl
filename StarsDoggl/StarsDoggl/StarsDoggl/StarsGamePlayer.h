@@ -1,6 +1,16 @@
 #include "StarsControl.h"
 #include "StarsGraphy.h"
 
+enum StarsSceneState
+{
+	StarsSceneState_None = 0,
+	StarsSceneState_BaseRoom,
+	StarsSceneState_Town,
+	StarsSceneState_Loading,
+	StarsSceneState_Battle,
+	StarsSceneState_BattleEnd,
+};
+
 enum StarsBattleState
 {
 	StarsBattleState_Start = 0,
@@ -36,6 +46,11 @@ public:
 	bool Initalize();
 	bool Finitalize();
 	void Update();
+	void UpdateBattle();
+
+	ST_POS FindPicture(std::string kPictureName, ST_RECT kRect, bool bUseLocalPos = true);
+	ST_POS FIndPictureORB(std::string kPictureName, bool bUseLocalPos = true);
+	ST_POS FindFont(std::string kStr, ST_RECT kRect, bool bUseLocalPos = true);
 private:
 	void ActionRun(float fDisX, float fDisY);
 	void UpdateRun();
@@ -52,4 +67,10 @@ private:
 	DWORD					m_iLeftRightEndTime;
 	bool				m_bStartAttack;
 	DWORD				m_iEndAttackTime;
+	HWND				m_iGameHandle;
+	ST_POS				m_kGamePos;
+	ST_POS				m_kPlayerPos;
+	DWORD				m_iLastUpdaetPlayerPos;
+	bool				m_bAllClear;
+	StarsSceneState		m_eSceneState;
 };
