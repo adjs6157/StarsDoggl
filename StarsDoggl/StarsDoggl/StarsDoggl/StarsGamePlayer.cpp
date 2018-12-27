@@ -39,6 +39,7 @@ bool StarsGamePlayer::Initalize()
 	}
 
 	m_iGameHandle = FindWindowA(NULL, "DNF");
+	return true;
 }
 
 bool StarsGamePlayer::Finitalize()
@@ -52,15 +53,22 @@ void StarsGamePlayer::Update()
 {
 	if (m_iGameHandle == 0)
 	{
-		m_iGameHandle = FindWindowA(NULL, "DNF");
+		m_iGameHandle = FindWindowA(NULL, "地下城与勇士");
 		return;
 	}
-	RECT kGameRect;
-	GetWindowRect(m_iGameHandle, &kGameRect);
-	m_kGamePos.x = kGameRect.left;
-	m_kGamePos.y = kGameRect.top;
+	else
+	{
+		RECT kGameRect;
+		GetWindowRect(m_iGameHandle, &kGameRect);
+		
+		m_kGameRect.left = kGameRect.left;
+		m_kGameRect.right = kGameRect.right;
+		m_kGameRect.top = kGameRect.top;
+		m_kGameRect.bottom = kGameRect.bottom;
+	}
+	
 
-	m_pkStarsGraphy->Update();
+	m_pkStarsGraphy->Update(m_kGameRect);
 	m_pkStarsControl->Update();
 	
 	switch (m_eSceneState)
@@ -87,13 +95,19 @@ void StarsGamePlayer::Update()
 
 void StarsGamePlayer::UpdateBattle()
 {
-	if (timeGetTime() - m_iLastUpdaetPlayerPos > 2000)
+
+	if (timeGetTime() - m_iLastUpdaetPlayerPos > 3000)
 	{
 		m_iLastUpdaetPlayerPos = timeGetTime();
-		m_kPlayerPos = FindPicture("player", ST_RECT(0, 800, 0, 600));
+		m_kPlayerPos = FindPicture("PlayerName.bmp", m_kGameRect);
+		if (m_kPlayerPos.x != -1)
+		{
+			ActionRun(500, 0);
+		}
+
 		if (!m_bAllClear)
 		{
-			ST_POS kMapPos = FindPicture("nextdoor", ST_RECT(0, 800, 0, 600));
+			ST_POS kMapPos = FindPicture("NextDoor.bmp", m_kGameRect);
 			if (kMapPos.x != -1)
 			{
 				m_bAllClear = true;
@@ -101,6 +115,7 @@ void StarsGamePlayer::UpdateBattle()
 			}
 		}
 	}
+	return;
 
 	switch (m_eBattleState)
 	{
@@ -112,7 +127,7 @@ void StarsGamePlayer::UpdateBattle()
 	}
 	case StarsBattleState_FindMonster:
 	{
-										 ST_POS kMonsterPos = FIndPictureORB("test3.bmp");
+										 ST_POS kMonsterPos = FindMonster();
 										 if (kMonsterPos.x != -1 && kMonsterPos.y != -1)
 										 {
 											 ActionRun(kMonsterPos.x - 400, kMonsterPos.y - 300);
@@ -222,8 +237,8 @@ ST_POS StarsGamePlayer::FindPicture(std::string kPictureName, ST_RECT kRect, boo
 	ST_POS kPos = m_pkStarsGraphy->FindPicture(kPictureName, kRect);
 	if (bUseLocalPos)
 	{
-		kPos.x -= m_kGamePos.x;
-		kPos.y -= m_kGamePos.y;
+		kPos.x -= m_kGameRect.left;
+		kPos.y -= m_kGameRect.top;
 	}
 	return kPos;
 }
@@ -233,8 +248,8 @@ ST_POS StarsGamePlayer::FIndPictureORB(std::string kPictureName, bool bUseLocalP
 	ST_POS kPos = m_pkStarsGraphy->FIndPictureORB(kPictureName);
 	if (bUseLocalPos)
 	{
-		kPos.x -= m_kGamePos.x;
-		kPos.y -= m_kGamePos.y;
+		kPos.x -= m_kGameRect.left;
+		kPos.y -= m_kGameRect.top;
 	}
 	return kPos;
 }
@@ -244,8 +259,8 @@ ST_POS StarsGamePlayer::FindFont(std::string kStr, ST_RECT kRect, bool bUseLocal
 	ST_POS kPos = m_pkStarsGraphy->FindFont(kStr, kRect);
 	if (bUseLocalPos)
 	{
-		kPos.x -= m_kGamePos.x;
-		kPos.y -= m_kGamePos.y;
+		kPos.x -= m_kGameRect.left;
+		kPos.y -= m_kGameRect.top;
 	}
 	return kPos;
 }
@@ -299,4 +314,24 @@ void StarsGamePlayer::UpdateAttack()
 		m_pkStarsControl->OnKeyDown('X');
 		m_pkStarsControl->OnKeyUp('X');
 	}
+}
+
+ST_POS StarsGamePlayer::FindMonster()
+{
+	char str[50];
+	for (int i = 1; i <= 6; ++i)
+	{
+		sprintf_s(str, "Monster%d.bmp", i);
+		ST_POS kMonsterPos = FIndPictureORB(str);
+		if (kMonsterPos.x != -1 && kMonsterPos.y != -1)
+		{
+			return kMonsterPos;
+		}
+	}
+	return ST_POS(-1, -1);
+}
+
+void StarsGamePlayer::SetSceneState(StarsSceneState eState)
+{
+	m_eSceneState = eState;
 }

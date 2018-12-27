@@ -51,11 +51,14 @@ public:
 	ST_POS FindPicture(std::string kPictureName, ST_RECT kRect, bool bUseLocalPos = true);
 	ST_POS FIndPictureORB(std::string kPictureName, bool bUseLocalPos = true);
 	ST_POS FindFont(std::string kStr, ST_RECT kRect, bool bUseLocalPos = true);
+
+	void SetSceneState(StarsSceneState eState);
 private:
 	void ActionRun(float fDisX, float fDisY);
 	void UpdateRun();
 	void ActionAttack(bool bStart);
 	void UpdateAttack();
+	ST_POS FindMonster();
 private:
 	StarsGraphy*		m_pkStarsGraphy;
 	StarsControl*		m_pkStarsControl;
@@ -68,7 +71,7 @@ private:
 	bool				m_bStartAttack;
 	DWORD				m_iEndAttackTime;
 	HWND				m_iGameHandle;
-	ST_POS				m_kGamePos;
+	ST_RECT				m_kGameRect;
 	ST_POS				m_kPlayerPos;
 	DWORD				m_iLastUpdaetPlayerPos;
 	bool				m_bAllClear;

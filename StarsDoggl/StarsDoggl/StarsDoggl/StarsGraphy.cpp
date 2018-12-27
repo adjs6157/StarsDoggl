@@ -63,7 +63,7 @@ bool StarsGraphy::Finitalize()
 	return true;
 }
 
-void StarsGraphy::Update()
+void StarsGraphy::Update(const ST_RECT& kGameRect)
 {
 	if (timeGetTime() - m_iLastUpdateTime < 300)
 	{
@@ -73,6 +73,9 @@ void StarsGraphy::Update()
 	m_iLastUpdateTime = timeGetTime();
 
 	m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
+
+	
+
 	for (int i = 0; i < iScreenShotHeight; ++i)
 	{
 		for (int j = 0; j < iScreenShotWidth; ++j)
@@ -84,11 +87,13 @@ void StarsGraphy::Update()
 			m_kScreenORBInfo.aiPixelData[iIndex1 + 2] = ((unsigned char*)m_pkScreenShotData)[iIndex2 + 2];
 		}
 	}
-
-	cv::Rect r1(0, 480, 800, 600);
+	
+	cv::Rect r1(kGameRect.left, kGameRect.top, kGameRect.right - kGameRect.left, kGameRect.bottom - kGameRect.top);
+	if (r1.x + r1.width > iScreenShotWidth) r1.width = iScreenShotWidth - r1.x;
+	if (r1.y + r1.height > iScreenShotHeight) r1.height = iScreenShotHeight - r1.y;
 	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
 	mask(r1).setTo(255);
-
+	
 	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
 	m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
 
@@ -97,7 +102,7 @@ void StarsGraphy::Update()
 
 	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
-	//FIndPictureORB("test3.bmp");
+	//FIndPictureORB("Monster1.bmp");
 
 
 	//cv::Mat img_1 = cv::imread("test5.bmp");
@@ -143,6 +148,7 @@ void StarsGraphy::Update()
 
 ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
 {
+	CheckRect(kRect);
 	ST_POS kPoint;
 	kPoint.x = -1; kPoint.y = -1;
 	std::map<std::string, GamePictureInfo>::iterator itr = m_akPicture.find(kPictureName);
@@ -201,18 +207,17 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 		}
 	}
 
-	if (mathces.size() == 0) return kPoint;
-
-	for (int i = 0; i < mathces.size(); ++i)
+	if (mathces.size() != 0)
 	{
-		kPoint.x += m_kScreenORBInfo.keypoints[mathces[i].trainIdx].pt.x;
-		kPoint.y += m_kScreenORBInfo.keypoints[mathces[i].trainIdx].pt.y;
-	}
+		for (int i = 0; i < mathces.size(); ++i)
+		{
+			kPoint.x += m_kScreenORBInfo.keypoints[mathces[i].trainIdx].pt.x;
+			kPoint.y += m_kScreenORBInfo.keypoints[mathces[i].trainIdx].pt.y;
+		}
 
-	kPoint.x /= mathces.size();
-	kPoint.y /= mathces.size();
-	
-	return kPoint;
+		kPoint.x /= mathces.size();
+		kPoint.y /= mathces.size();
+	}
 
 	//// -- dwaw matches 
 	//cv::Mat img_mathes;
@@ -220,10 +225,13 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 	//// -- show 
 	//cv::imshow("Mathces", img_mathes);
 
+	return kPoint;
+
 }
 
 ST_POS StarsGraphy::FindFont(std::string kStr, ST_RECT kRect)
 {
+	CheckRect(kRect);
 	return ST_POS(-1, -1);
 }
 
@@ -288,6 +296,18 @@ void StarsGraphy::LoadLocalPicture()
 			MessageBoxA(NULL, kStrWaring.c_str(), "Warning", MB_OK);
 		}
 	}
+}
+
+void StarsGraphy::CheckRect(ST_RECT& kRect)
+{
+	if (kRect.left < 0) kRect.left = 0;
+	if (kRect.left > iScreenShotWidth) kRect.left = iScreenShotWidth;
+	if (kRect.right < 0) kRect.right = 0;
+	if (kRect.right > iScreenShotWidth) kRect.right = iScreenShotWidth;
+	if (kRect.top < 0) kRect.top = 0;
+	if (kRect.top > iScreenShotHeight) kRect.top = iScreenShotHeight;
+	if (kRect.bottom < 0) kRect.bottom = 0;
+	if (kRect.bottom > iScreenShotHeight) kRect.bottom = iScreenShotHeight;
 }
 
 void StarsGraphy::RotateImg(DWORD *pImgData)
@@ -386,6 +406,7 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 		for (int j = iBeginX; j < iEndX; ++j)
 		{
 			int iPixelPass = 0;
+			bool bBreak = false;
 			for (int k = 0; k < akGamePictureInfo.iPixelHeight; ++k)
 			{
 				for (int l = 0; l < akGamePictureInfo.iPixelWidth; ++l)
@@ -409,6 +430,15 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 					{
 						iPixelPass++;
 					}
+					else
+					{
+						bBreak = true;
+						break;
+					}
+				}
+				if (bBreak)
+				{
+					break;
 				}
 			}
 

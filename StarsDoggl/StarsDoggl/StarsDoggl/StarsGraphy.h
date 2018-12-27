@@ -77,13 +77,14 @@ public:
 	~StarsGraphy();
 	bool Initalize();
 	bool Finitalize();
-	void Update();
+	void Update(const ST_RECT& kGameRect);
 
 	ST_POS FindPicture(std::string kPictureName, ST_RECT kRect);
 	ST_POS FIndPictureORB(std::string kPictureName);
 	ST_POS FindFont(std::string kStr, ST_RECT kRect);
 	
 private:
+	void CheckRect(ST_RECT& kRect);
 	void RotateImg(DWORD *pImgData);
 	void SaveBmpFile(const char *fileName, DWORD *pImgData, int iWidth, int iHeight);
 	void LoadLocalPicture();
