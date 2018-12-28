@@ -46,7 +46,8 @@ bool StarsGraphy::Initalize()
 
 	LoadLocalPicture();
 
-	m_iLastUpdateTime = timeGetTime();
+	m_iLastUpdateTime = 0;
+	m_iLastUpdateTimeORB = 0;
 	return true;
 }
 
@@ -87,23 +88,26 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 		}
 	}*/
 
+	if (timeGetTime() - m_iLastUpdateTimeORB > 2000)
+	{
+		m_iLastUpdateTimeORB = timeGetTime();
+		cv::Rect r1(kGameRect.left, kGameRect.top, kGameRect.right - kGameRect.left, kGameRect.bottom - kGameRect.top);
+		if (r1.x + r1.width > iScreenShotWidth) r1.width = iScreenShotWidth - r1.x;
+		if (r1.y + r1.height > iScreenShotHeight) r1.height = iScreenShotHeight - r1.y;
+		cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
+		mask(r1).setTo(255);
 
-	cv::Rect r1(kGameRect.left, kGameRect.top, kGameRect.right - kGameRect.left, kGameRect.bottom - kGameRect.top);
-	if (r1.x + r1.width > iScreenShotWidth) r1.width = iScreenShotWidth - r1.x;
-	if (r1.y + r1.height > iScreenShotHeight) r1.height = iScreenShotHeight - r1.y;
-	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
-	mask(r1).setTo(255);
 
-
-	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
-	m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
+		m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
+		m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
+	}
 
 	//RotateImg(m_pkScreenShotData);
 	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
 
 	ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
-	//FIndPictureORB("test3.bmp");
+	FIndPictureORB("test3.bmp");
 
 
 	//cv::Mat img_1 = cv::imread("test5.bmp");
@@ -217,14 +221,14 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 
 	kPoint.x /= mathces.size();
 	kPoint.y /= mathces.size();
-	
-	return kPoint;
 
 	//// -- dwaw matches 
 	//cv::Mat img_mathes;
 	//drawMatches(*(itr->second.img), itr->second.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
 	//// -- show 
 	//cv::imshow("Mathces", img_mathes);
+
+	return kPoint;
 
 }
 

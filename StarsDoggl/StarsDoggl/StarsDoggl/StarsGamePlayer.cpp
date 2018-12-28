@@ -1,5 +1,8 @@
 #include "StarsGamePlayer.h"
 
+extern int iScreenShotWidth;
+extern int iScreenShotHeight;
+
 StarsGamePlayer::StarsGamePlayer()
 {
 	m_pkStarsGraphy = nullptr;
@@ -54,6 +57,12 @@ void StarsGamePlayer::Update()
 	if (m_iGameHandle == 0)
 	{
 		m_iGameHandle = FindWindowA(NULL, "地下城与勇士");
+
+		m_kGameRect.left = 0;
+		m_kGameRect.right = iScreenShotWidth;
+		m_kGameRect.top = 0;
+		m_kGameRect.bottom = iScreenShotHeight;
+
 		return;
 	}
 	else
@@ -96,14 +105,14 @@ void StarsGamePlayer::Update()
 void StarsGamePlayer::UpdateBattle()
 {
 
-	if (timeGetTime() - m_iLastUpdaetPlayerPos > 3000)
+	if (timeGetTime() - m_iLastUpdaetPlayerPos > 2000)
 	{
 		m_iLastUpdaetPlayerPos = timeGetTime();
 		m_kPlayerPos = FindPicture("PlayerName.bmp", m_kGameRect);
-		if (m_kPlayerPos.x != -1)
-		{
-			ActionRun(500, 0);
-		}
+		//if (m_kPlayerPos.x != -1)
+		//{
+		//	ActionRun(500, 0);
+		//}
 
 		if (!m_bAllClear)
 		{

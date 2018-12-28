@@ -95,6 +95,7 @@ private:
 private:
 	ScreenShotDDRAW* m_pkScreenShotDDRAW;
 	int m_iLastUpdateTime;
+	int m_iLastUpdateTimeORB;
 	DWORD *m_pkScreenShotData;
 	DWORD *m_pkRotateImg32;
 	int	m_iImgDataSize;
