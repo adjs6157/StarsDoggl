@@ -3,6 +3,7 @@
 #include <strsafe.h>
 #include <assert.h>
 #include <io.h>
+#include <queue>
 
 int iScreenShotWidth;
 int iScreenShotHeight;
@@ -35,11 +36,12 @@ bool StarsGraphy::Initalize()
 		return false;
 	}
 
-	m_pkORBTool = new cv::ORB(5000, 1.2f, 1, 3, 0, 2, 0, 21);
+	m_pkORBTool = new cv::ORB(1000, 1.2f, 1, 3, 0, 2, 0, 21);
 	m_pkMatcher = new cv::BFMatcher(cv::NORM_HAMMING);
+	m_aiVisitPoint = new bool[iScreenShotWidth * iScreenShotHeight];
 
-	m_kScreenORBInfo.aiPixelData = new unsigned char[iScreenShotWidth * iScreenShotHeight * 3];
-	m_kScreenORBInfo.img = new cv::Mat(iScreenShotHeight, iScreenShotWidth, CV_8UC3, m_kScreenORBInfo.aiPixelData);
+	m_kScreenORBInfo.aiPixelData = (unsigned char*)m_pkScreenShotData;// new unsigned char[iScreenShotWidth * iScreenShotHeight * 4];
+	m_kScreenORBInfo.img = new cv::Mat(iScreenShotHeight, iScreenShotWidth, CV_8UC4, m_kScreenORBInfo.aiPixelData);
 	m_kScreenORBInfo.descriptors = new cv::Mat();
 
 	LoadLocalPicture();
@@ -73,7 +75,7 @@ void StarsGraphy::Update()
 	m_iLastUpdateTime = timeGetTime();
 
 	m_pkScreenShotDDRAW->CaptureScreen(m_pkScreenShotData, m_iImgDataSize);
-	for (int i = 0; i < iScreenShotHeight; ++i)
+	/*for (int i = 0; i < iScreenShotHeight; ++i)
 	{
 		for (int j = 0; j < iScreenShotWidth; ++j)
 		{
@@ -83,7 +85,8 @@ void StarsGraphy::Update()
 			m_kScreenORBInfo.aiPixelData[iIndex1 + 1] = ((unsigned char*)m_pkScreenShotData)[iIndex2 + 1];
 			m_kScreenORBInfo.aiPixelData[iIndex1 + 2] = ((unsigned char*)m_pkScreenShotData)[iIndex2 + 2];
 		}
-	}
+	}*/
+
 
 	cv::Rect r1(0, 480, 800, 600);
 	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
@@ -95,7 +98,7 @@ void StarsGraphy::Update()
 	//RotateImg(m_pkScreenShotData);
 	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
 
-	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
+	ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
 	//FIndPictureORB("test3.bmp");
 
@@ -153,7 +156,7 @@ ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
 		MessageBoxA(NULL, kStr.c_str(), "Warning", MB_OK);
 		return kPoint;
 	}
-
+	CheckRect(kRect, itr->second.iPixelWidth, itr->second.iPixelHeight);
 	ComPareImageNormal(kRect.left, kRect.right, kRect.top, kRect.bottom, itr->second);
 	if (itr->second.fComPareRate > 0.9f)
 	{
@@ -248,7 +251,7 @@ void StarsGraphy::LoadLocalPicture()
 			SelectObject(hdcIcon, hBitMapIcon);
 
 			GameORBInfo& kGameORBInfo = m_akORBInfo[akPictureName[i]];
-			kGameORBInfo.aiPixelData = new unsigned char[bitMapIcon.bmHeight * bitMapIcon.bmWidth * 3];
+			kGameORBInfo.aiPixelData = new unsigned char[bitMapIcon.bmHeight * bitMapIcon.bmWidth * 4];
 
 			GamePictureInfo& kGamePictureInfo = m_akPicture[akPictureName[i]];
 			kGamePictureInfo.iPixelWidth = bitMapIcon.bmWidth;
@@ -268,15 +271,16 @@ void StarsGraphy::LoadLocalPicture()
 					{
 						kGamePictureInfo.iPixelCount++;
 					}
-					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3] = (unsigned char)r;
+					/*kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3] = (unsigned char)r;
 					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3 + 1] = (unsigned char)g;
-					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3 + 2] = (unsigned char)b;
+					kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 3 + 2] = (unsigned char)b;*/
+					memcpy(&(kGameORBInfo.aiPixelData[(bitMapIcon.bmWidth * i + j) * 4]), &color, 4);
 				}
 			}
 			DeleteDC(hdcIcon);
 			::DeleteObject(hBitMapIcon);
 			
-			kGameORBInfo.img = new cv::Mat(bitMapIcon.bmHeight, bitMapIcon.bmWidth, CV_8UC3, kGameORBInfo.aiPixelData);
+			kGameORBInfo.img = new cv::Mat(bitMapIcon.bmHeight, bitMapIcon.bmWidth, CV_8UC4, kGameORBInfo.aiPixelData);
 			kGameORBInfo.descriptors = new cv::Mat();
 			m_pkORBTool->detect(*(kGameORBInfo.img), kGameORBInfo.keypoints);
 			m_pkORBTool->compute(*(kGameORBInfo.img), kGameORBInfo.keypoints, *(kGameORBInfo.descriptors));
@@ -376,60 +380,125 @@ void StarsGraphy::GetFiles(std::string path, std::vector<std::string>& filePaths
 }
 
 
-void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& akGamePictureInfo)
+void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& kGamePictureInfo)
 {
-	akGamePictureInfo.fComPareRate = 0;
-
-	for (int i = iBeginY; i < iEndY; ++i)
+	memset(m_aiVisitPoint, 0, iScreenShotWidth * iScreenShotHeight);
+	std::queue<ST_POS> kQueue;
+	ST_POS kStarPoint((iBeginX + iEndX) / 2, (iBeginY + iEndY) / 2);
+	kQueue.push(kStarPoint);
+	int iMaxIndex = iScreenShotWidth * iScreenShotHeight - 1;
+	const int aiDir[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+	ST_POS kTempPoint;
+	int iTempIndex;
+	while (!kQueue.empty())
 	{
-		bool iComPareSucess = false;
-		for (int j = iBeginX; j < iEndX; ++j)
+		kStarPoint = kQueue.front();
+		kQueue.pop();
+		for (int k = 0; k < 4; ++k)
 		{
-			int iPixelPass = 0;
-			for (int k = 0; k < akGamePictureInfo.iPixelHeight; ++k)
+			kTempPoint.x = aiDir[k][0] + kStarPoint.x;
+			kTempPoint.y = aiDir[k][1] + kStarPoint.y;
+			iTempIndex = kTempPoint.x + kTempPoint.y * iScreenShotWidth;
+			if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
 			{
-				for (int l = 0; l < akGamePictureInfo.iPixelWidth; ++l)
-				{
-					//DWORD r1 = akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] & 0x000000FF;
-					//DWORD g1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 8) & 0x000000FF;
-					//DWORD b1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 16) & 0x000000FF;
-					//DWORD a1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 24) & 0x000000FF;
-
-					//DWORD r2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)]) & 0x000000FF;
-					//DWORD g2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 8) & 0x000000FF;
-					//DWORD b2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 16) & 0x000000FF;
-					//DWORD a2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 24) & 0x000000FF;
-
-					if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] == BACK_COLOR)
-					{
-						continue;
-					}
-
-					if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] == m_pkScreenShotData[(i + k) * iScreenShotWidth + (j + l)])
-					{
-						iPixelPass++;
-					}
-				}
+				kQueue.push(kTempPoint);
+				m_aiVisitPoint[iTempIndex] = true;
 			}
+		}
 
-			//m_pkRotateImg32[i * iEndX + j] = m_pkScreenShotData[(i) * iScreenShotWidth + (j)];
-
-			float fComPareRate = iPixelPass * 1.0f / akGamePictureInfo.iPixelCount;
-			if (fComPareRate > akGamePictureInfo.fComPareRate)
+		int iPixelPass = 0;
+		for (int k = 0; k < kGamePictureInfo.iPixelHeight; ++k)
+		{
+			for (int l = 0; l < kGamePictureInfo.iPixelWidth; ++l)
 			{
-				akGamePictureInfo.fComPareRate = fComPareRate;
-				if (fComPareRate > 0.9f)
+				iTempIndex = k * kGamePictureInfo.iPixelWidth + l;
+				if (kGamePictureInfo.aiPixelData[iTempIndex] == BACK_COLOR)
 				{
-					akGamePictureInfo.iComPareBeginX = i;
-					akGamePictureInfo.iComPareBeginY = j;
-					iComPareSucess = true;
+					continue;
+				}
+
+				if (kGamePictureInfo.aiPixelData[iTempIndex] == m_pkScreenShotData[(kStarPoint.y + k) * iScreenShotWidth + (kStarPoint.x + l)])
+				{
+					iPixelPass++;
+				}
+				else
+				{
+					iPixelPass = -1;
 					break;
 				}
 			}
+			if (iPixelPass == -1) break;
 		}
-		if (iComPareSucess) break;
+
+		if (iPixelPass == kGamePictureInfo.iPixelCount)
+		{
+			kGamePictureInfo.fComPareRate = 1;
+			kGamePictureInfo.iComPareBeginX = kStarPoint.x;
+			kGamePictureInfo.iComPareBeginY = kStarPoint.y;
+		}
 	}
+
+
+	//akGamePictureInfo.fComPareRate = 0;
+
+	//for (int i = iBeginY; i < iEndY; ++i)
+	//{
+	//	bool iComPareSucess = false;
+	//	for (int j = iBeginX; j < iEndX; ++j)
+	//	{
+	//		int iPixelPass = 0;
+	//		for (int k = 0; k < akGamePictureInfo.iPixelHeight; ++k)
+	//		{
+	//			for (int l = 0; l < akGamePictureInfo.iPixelWidth; ++l)
+	//			{
+	//				//DWORD r1 = akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] & 0x000000FF;
+	//				//DWORD g1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 8) & 0x000000FF;
+	//				//DWORD b1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 16) & 0x000000FF;
+	//				//DWORD a1 = (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] >> 24) & 0x000000FF;
+
+	//				//DWORD r2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)]) & 0x000000FF;
+	//				//DWORD g2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 8) & 0x000000FF;
+	//				//DWORD b2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 16) & 0x000000FF;
+	//				//DWORD a2 = (m_pkScreenShotData[(iScreenShotHeight - 1 - i - k) * iScreenShotWidth + (j + l)] >> 24) & 0x000000FF;
+
+	//				if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] == BACK_COLOR)
+	//				{
+	//					continue;
+	//				}
+
+	//				if (akGamePictureInfo.aiPixelData[k * akGamePictureInfo.iPixelWidth + l] == m_pkScreenShotData[(i + k) * iScreenShotWidth + (j + l)])
+	//				{
+	//					iPixelPass++;
+	//				}
+	//			}
+	//		}
+
+	//		//m_pkRotateImg32[i * iEndX + j] = m_pkScreenShotData[(i) * iScreenShotWidth + (j)];
+
+	//		float fComPareRate = iPixelPass * 1.0f / akGamePictureInfo.iPixelCount;
+	//		if (fComPareRate > akGamePictureInfo.fComPareRate)
+	//		{
+	//			akGamePictureInfo.fComPareRate = fComPareRate;
+	//			if (fComPareRate > 0.9f)
+	//			{
+	//				akGamePictureInfo.iComPareBeginX = i;
+	//				akGamePictureInfo.iComPareBeginY = j;
+	//				iComPareSucess = true;
+	//				break;
+	//			}
+	//		}
+	//	}
+	//	if (iComPareSucess) break;
+	//}
 
 	//SaveBmpFile("compare1.bmp", akGamePictureInfo.aiPixelData, akGamePictureInfo.iPixelWidth, akGamePictureInfo.iPixelHeight);
 	//SaveBmpFile("compare2.bmp", m_pkRotateImg32, iEndX, iEndY);
+}
+
+void StarsGraphy::CheckRect(ST_RECT& kRect, int iWidth, int iHeight)
+{
+	if (kRect.left < 0) kRect.left = 0;
+	if (kRect.right > iScreenShotWidth - iWidth) kRect.right = iScreenShotWidth - iWidth;
+	if (kRect.top < 0) kRect.top = 0;
+	if (kRect.bottom > iScreenShotHeight - iHeight) kRect.bottom = iScreenShotHeight - iHeight;
 }

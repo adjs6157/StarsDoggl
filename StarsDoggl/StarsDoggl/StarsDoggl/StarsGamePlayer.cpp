@@ -39,6 +39,7 @@ bool StarsGamePlayer::Initalize()
 	}
 
 	m_iGameHandle = FindWindowA(NULL, "DNF");
+	return true;
 }
 
 bool StarsGamePlayer::Finitalize()
@@ -53,7 +54,7 @@ void StarsGamePlayer::Update()
 	if (m_iGameHandle == 0)
 	{
 		m_iGameHandle = FindWindowA(NULL, "DNF");
-		return;
+		//return;
 	}
 	RECT kGameRect;
 	GetWindowRect(m_iGameHandle, &kGameRect);

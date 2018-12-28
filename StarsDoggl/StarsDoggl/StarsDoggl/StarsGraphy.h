@@ -61,7 +61,7 @@ struct GameORBInfo
 		}
 		if (aiPixelData != nullptr)
 		{
-			delete aiPixelData;
+			delete[] aiPixelData;
 		}
 	}
 	cv::Mat* img;
@@ -90,7 +90,7 @@ private:
 	void LoadFont();
 	void GetFiles(std::string path, std::vector<std::string>& filePaths, std::vector<std::string>& fileNames);
 	void ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& akGamePictureInfo);
-
+	void CheckRect(ST_RECT& kRect, int iWidth, int iHeight);
 private:
 	ScreenShotDDRAW* m_pkScreenShotDDRAW;
 	int m_iLastUpdateTime;
@@ -103,4 +103,5 @@ private:
 	GameORBInfo	m_kScreenORBInfo;
 	cv::ORB* m_pkORBTool;
 	cv::BFMatcher* m_pkMatcher;
+	bool*	m_aiVisitPoint;
 };
