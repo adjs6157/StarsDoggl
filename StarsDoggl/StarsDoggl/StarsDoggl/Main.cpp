@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "StarsGamePlayer.h"
+#include <DbgHelp.h>
 
 HWND				g_hGameWnd = NULL;
 int					g_iWidth = 400;
@@ -72,10 +73,12 @@ void ProcessControl(HWND hWnd, DWORD wParam)
 		if (SendMessage(g_hButtonCurrPut, BM_GETCHECK, 0, 0) == BST_CHECKED)
 		{
 			SendMessage(g_hButtonCurrPut, BM_SETCHECK, BST_UNCHECKED, 0);
+			g_kGamePlayer.SetSceneState(StarsSceneState_None);
 		}
 		else
 		{
 			SendMessage(g_hButtonCurrPut, BM_SETCHECK, BST_CHECKED, 0);
+			g_kGamePlayer.SetSceneState(StarsSceneState_Battle);
 		}
 	}
 	else if (LOWORD(wParam) == 521 && HIWORD(wParam) == BN_CLICKED)
@@ -182,6 +185,88 @@ BOOL CreateWnd(HINSTANCE hInstance)
 	return TRUE;
 }
 
+//生产DUMP文件
+int GenerateMiniDump(HANDLE hFile, PEXCEPTION_POINTERS pExceptionPointers, PWCHAR pwAppName)
+{
+	BOOL bOwnDumpFile = FALSE;
+	HANDLE hDumpFile = hFile;
+	MINIDUMP_EXCEPTION_INFORMATION ExpParam;
+
+	typedef BOOL(WINAPI * MiniDumpWriteDumpT)(
+		HANDLE,
+		DWORD,
+		HANDLE,
+		MINIDUMP_TYPE,
+		PMINIDUMP_EXCEPTION_INFORMATION,
+		PMINIDUMP_USER_STREAM_INFORMATION,
+		PMINIDUMP_CALLBACK_INFORMATION
+		);
+
+	MiniDumpWriteDumpT pfnMiniDumpWriteDump = NULL;
+	HMODULE hDbgHelp = LoadLibrary("DbgHelp.dll");
+	if (hDbgHelp)
+		pfnMiniDumpWriteDump = (MiniDumpWriteDumpT)GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
+
+	if (pfnMiniDumpWriteDump)
+	{
+		if (hDumpFile == NULL || hDumpFile == INVALID_HANDLE_VALUE)
+		{
+			//TCHAR szPath[MAX_PATH] = { 0 };
+			TCHAR szFileName[MAX_PATH] = { 0 };
+			//TCHAR* szAppName = pwAppName;
+			TCHAR* szVersion = "v1.0";
+			TCHAR dwBufferSize = MAX_PATH;
+			SYSTEMTIME stLocalTime;
+
+			GetLocalTime(&stLocalTime);
+			//GetTempPath(dwBufferSize, szPath);
+
+			//wsprintf(szFileName, L"%s%s", szPath, szAppName);
+			CreateDirectory(szFileName, NULL);
+
+			wsprintf(szFileName, "%s-%04d%02d%02d-%02d%02d%02d-%ld-%ld.dmp",
+				//szPath, szAppName, szVersion,
+				szVersion,
+				stLocalTime.wYear, stLocalTime.wMonth, stLocalTime.wDay,
+				stLocalTime.wHour, stLocalTime.wMinute, stLocalTime.wSecond,
+				GetCurrentProcessId(), GetCurrentThreadId());
+			hDumpFile = CreateFile(szFileName, GENERIC_READ | GENERIC_WRITE,
+				FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+
+			bOwnDumpFile = TRUE;
+			OutputDebugString(szFileName);
+		}
+
+		if (hDumpFile != INVALID_HANDLE_VALUE)
+		{
+			ExpParam.ThreadId = GetCurrentThreadId();
+			ExpParam.ExceptionPointers = pExceptionPointers;
+			ExpParam.ClientPointers = FALSE;
+
+			pfnMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+				hDumpFile, MiniDumpWithDataSegs, (pExceptionPointers ? &ExpParam : NULL), NULL, NULL);
+
+			if (bOwnDumpFile)
+				CloseHandle(hDumpFile);
+		}
+	}
+
+	if (hDbgHelp != NULL)
+		FreeLibrary(hDbgHelp);
+
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+
+LONG WINAPI ExceptionFilter(LPEXCEPTION_POINTERS lpExceptionInfo)
+{
+	if (IsDebuggerPresent())
+	{
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	return GenerateMiniDump(NULL, lpExceptionInfo, L"test");
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -197,6 +282,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageBoxA(NULL, "g_kGamePlayer初始化失败", "Warning", MB_OK);
 		return 0;
 	}
+
+	SetUnhandledExceptionFilter(ExceptionFilter);
 
 	MSG msg;
 	while (true)

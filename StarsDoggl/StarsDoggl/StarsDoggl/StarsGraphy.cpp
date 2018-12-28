@@ -65,7 +65,7 @@ bool StarsGraphy::Finitalize()
 	return true;
 }
 
-void StarsGraphy::Update()
+void StarsGraphy::Update(const ST_RECT& kGameRect)
 {
 	if (timeGetTime() - m_iLastUpdateTime < 300)
 	{
@@ -88,9 +88,12 @@ void StarsGraphy::Update()
 	}*/
 
 
-	cv::Rect r1(0, 480, 800, 600);
+	cv::Rect r1(kGameRect.left, kGameRect.top, kGameRect.right - kGameRect.left, kGameRect.bottom - kGameRect.top);
+	if (r1.x + r1.width > iScreenShotWidth) r1.width = iScreenShotWidth - r1.x;
+	if (r1.y + r1.height > iScreenShotHeight) r1.height = iScreenShotHeight - r1.y;
 	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
 	mask(r1).setTo(255);
+
 
 	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
 	m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));

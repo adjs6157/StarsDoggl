@@ -7,7 +7,7 @@ struct ST_RECT
 		left = right = top = bottom = 0;
 	}
 
-	ST_RECT(DWORD _left, DWORD _right, DWORD _top, DWORD _bottom)
+	ST_RECT(int _left, int _right, int _top, int _bottom)
 	{
 		left = _left;
 		right = _right;
@@ -15,10 +15,10 @@ struct ST_RECT
 		bottom = _bottom;
 	}
 
-	DWORD left;
-	DWORD right;
-	DWORD top;
-	DWORD bottom;
+	int left;
+	int right;
+	int top;
+	int bottom;
 };
 
 struct ST_POS
@@ -29,12 +29,12 @@ struct ST_POS
 		y = 0;
 	}
 
-	ST_POS(DWORD _posX, DWORD _posY)
+	ST_POS(int _posX, int _posY)
 	{
 		x = _posX;
 		y = _posY;
 	}
 
-	DWORD x;
-	DWORD y;
+	int x;
+	int y;
 };
