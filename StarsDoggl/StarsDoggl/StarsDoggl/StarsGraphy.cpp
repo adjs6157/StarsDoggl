@@ -10,6 +10,7 @@ int iScreenShotHeight;
 
 #define BACK_COLOR 0xFFFF00FF
 
+extern void PrintLog(char *format, ...);
 StarsGraphy::StarsGraphy()
 {
 	m_pkScreenShotDDRAW = new ScreenShotDDRAW();
@@ -160,7 +161,7 @@ ST_POS StarsGraphy::FindPicture(std::string kPictureName, ST_RECT kRect)
 	{
 		std::string kStr = "FindPictureÕº∆¨Œ¥º”‘ÿ:";
 		kStr += kPictureName;
-		MessageBoxA(NULL, kStr.c_str(), "Warning", MB_OK);
+		
 		return kPoint;
 	}
 	CheckRect(kRect, itr->second.iPixelWidth, itr->second.iPixelHeight);
@@ -184,7 +185,7 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 	{
 		std::string kStr = "FIndPictureORBÕº∆¨Œ¥º”‘ÿ:";
 		kStr += kPictureName;
-		MessageBoxA(NULL, kStr.c_str(), "Warning", MB_OK);
+		//MessageBoxA(NULL, kStr.c_str(), "Warning", MB_OK);
 		return kPoint;
 	}
 
@@ -211,7 +212,9 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 		}
 	}
 
-	if (mathces.size() == 0) return kPoint;
+	if (mathces.size() <= 7) return kPoint;
+
+	PrintLog("mathces.size() <= 7");
 
 	for (int i = 0; i < mathces.size(); ++i)
 	{
@@ -222,11 +225,14 @@ ST_POS StarsGraphy::FIndPictureORB(std::string kPictureName/*, ST_RECT kRect*/)
 	kPoint.x /= mathces.size();
 	kPoint.y /= mathces.size();
 
-	//// -- dwaw matches 
-	//cv::Mat img_mathes;
-	//drawMatches(*(itr->second.img), itr->second.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
-	//// -- show 
+	// -- dwaw matches 
+	cv::Mat img_mathes;
+	drawMatches(*(itr->second.img), itr->second.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
+	// -- show 
 	//cv::imshow("Mathces", img_mathes);
+	char str[40];
+	sprintf_s(str, "com%d|%s.jpg", timeGetTime(), kPictureName.c_str());
+	cv::imwrite(str, img_mathes);
 
 	return kPoint;
 

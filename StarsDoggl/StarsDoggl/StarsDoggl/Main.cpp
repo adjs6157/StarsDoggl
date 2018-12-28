@@ -19,11 +19,22 @@ StarsGamePlayer g_kGamePlayer;
 HWND g_hButtonCurrPut = 0;
 HWND g_hButtonAltStopAttack = 0;
 HWND g_hButtonAutoFish = 0;
-
 HWND g_hButtonOD = 0;
+HWND g_hTextLog = 0;
 
-int* iTest = 0;
 bool g_bClose = false;
+std::string g_kLog = "";
+void PrintLog(char *format, ...)
+{
+	char str[256];
+	va_list ap;
+	va_start(ap, format);
+	vsprintf_s(str, format, ap);
+	va_end(ap);
+	g_kLog = "\r\n" + g_kLog;
+	g_kLog = str +  g_kLog;
+	SetWindowTextA(g_hTextLog, g_kLog.c_str());
+}
 void CreateControl(HWND hWnd)
 {
 	g_hButtonCurrPut = (HWND)CreateWindow(TEXT("Button"),  //Button是预定义 窗体类
@@ -53,9 +64,6 @@ void CreateControl(HWND hWnd)
 		g_hInstance,
 		NULL);
 
-	iTest = new int;
-	iTest = 0;
-
 	g_hButtonOD = (HWND)CreateWindow(TEXT("Button"),  //Button是预定义 窗体类
 		TEXT("0"),
 		WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
@@ -64,10 +72,20 @@ void CreateControl(HWND hWnd)
 		(HMENU)523,  //(重点)这里设置按钮id,但是 原本是设置菜单的 所以需要HMENU
 		g_hInstance,
 		NULL);
+
+	g_hTextLog = (HWND)CreateWindow(TEXT("edit"),  //Button是预定义 窗体类
+		TEXT("023"),
+		WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_MULTILINE /*| ES_READONLY*/,
+		175, 2, 205, 200,
+		hWnd,
+		(HMENU)524,  //(重点)这里设置按钮id,但是 原本是设置菜单的 所以需要HMENU
+		g_hInstance,
+		NULL);
 }
 
 void ProcessControl(HWND hWnd, DWORD wParam)
 {
+	char str[124];
 	if (LOWORD(wParam) == 520 && HIWORD(wParam) == BN_CLICKED)
 	{
 		if (SendMessage(g_hButtonCurrPut, BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -321,6 +339,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		g_kGamePlayer.Update();
 	}
 	g_kGamePlayer.Finitalize();
+
+	FILE* pkFileLog = nullptr;
+	fopen_s(&pkFileLog,"StarsLog.txt", "a+");
+	if (pkFileLog)
+	{
+		fputs(g_kLog.c_str(), pkFileLog);
+	}
 
 	return true;
 }

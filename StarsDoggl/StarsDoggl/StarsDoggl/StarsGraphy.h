@@ -59,10 +59,10 @@ struct GameORBInfo
 		{
 			delete descriptors;
 		}
-		if (aiPixelData != nullptr)
+		/*if (aiPixelData != nullptr)
 		{
 			delete[] aiPixelData;
-		}
+		}*/
 	}
 	cv::Mat* img;
 	std::vector<cv::KeyPoint> keypoints;
