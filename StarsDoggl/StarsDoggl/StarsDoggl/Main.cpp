@@ -24,7 +24,7 @@ HWND g_hTextLog = 0;
 
 bool g_bClose = false;
 std::string g_kLog = "";
-void PrintLog(char *format, ...)
+void PrintLog(const char *format, ...)
 {
 	char str[256];
 	va_list ap;

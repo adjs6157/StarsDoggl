@@ -2,7 +2,7 @@
 
 extern int iScreenShotWidth;
 extern int iScreenShotHeight;
-extern void PrintLog(char *format, ...);
+extern void PrintLog(const char *format, ...);
 
 StarsGamePlayer::StarsGamePlayer()
 {
@@ -55,6 +55,7 @@ bool StarsGamePlayer::Finitalize()
 
 void StarsGamePlayer::Update()
 {
+	
 	if (m_iGameHandle == 0)
 	{
 		m_iGameHandle = FindWindowA(NULL, "地下城与勇士");
@@ -63,7 +64,7 @@ void StarsGamePlayer::Update()
 		m_kGameRect.right = iScreenShotWidth;
 		m_kGameRect.top = 0;
 		m_kGameRect.bottom = iScreenShotHeight;
-
+		m_pkStarsGraphy->Update(m_kGameRect);
 		return;
 	}
 	else
