@@ -79,9 +79,10 @@ public:
 	bool Finitalize();
 	void Update(const ST_RECT& kGameRect);
 
-	ST_POS FindPicture(std::string kPictureName, ST_RECT kRect);
-	ST_POS FIndPictureORB(std::string kPictureName);
-	ST_POS FindFont(std::string kStr, ST_RECT kRect);
+	ST_POS FindPicture(const std::string& kPictureName, ST_RECT kRect);
+	ST_POS FIndPictureORB(const std::string& kPictureName);
+	ST_POS FIndPictureORB(GameORBInfo& kGameORBInfo, const std::string& kPictureName);
+	ST_POS FindFont(const std::string& kStr, ST_RECT kRect);
 	
 private:
 	void CheckRect(ST_RECT& kRect);
@@ -102,6 +103,7 @@ private:
 	std::map<std::string, GamePictureInfo> m_akPicture;
 
 	std::map<std::string, GameORBInfo> m_akORBInfo;
+	std::map<std::string, GameORBInfo> m_akORBInfoFlip;
 	GameORBInfo	m_kScreenORBInfo;
 	cv::ORB* m_pkORBTool;
 	cv::BFMatcher* m_pkMatcher;

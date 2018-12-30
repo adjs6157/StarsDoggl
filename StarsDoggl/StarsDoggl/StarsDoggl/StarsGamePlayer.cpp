@@ -61,9 +61,9 @@ void StarsGamePlayer::Update()
 		m_iGameHandle = FindWindowA(NULL, "地下城与勇士");
 
 		m_kGameRect.left = 0;
-		m_kGameRect.right = iScreenShotWidth;
+		m_kGameRect.right = 800;
 		m_kGameRect.top = 0;
-		m_kGameRect.bottom = iScreenShotHeight;
+		m_kGameRect.bottom = 600;
 		m_pkStarsGraphy->Update(m_kGameRect);
 		return;
 	}
