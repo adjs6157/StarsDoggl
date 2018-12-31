@@ -38,7 +38,7 @@ bool StarsGraphy::Initalize()
 		return false;
 	}
 
-	m_pkORBTool = new cv::ORB(2000, 1.2f, 3, 0, 0, 3, 0, 5);
+	m_pkORBTool = new cv::ORB(5000, 1.2f, 3, 0, 0, 3, 0, 5);
 	m_pkMatcher = new cv::BFMatcher(cv::NORM_HAMMING2);
 	m_aiVisitPoint = new bool[iScreenShotWidth * iScreenShotHeight];
 
@@ -114,7 +114,7 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 
 	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
-	//FIndPictureORB("Monster9.bmp");
+	//FIndPictureORB("Monster6.bmp");
 
 
 	///////////////ORB////////////////////////////////////////
@@ -315,6 +315,36 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 	//}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////模板匹配/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	cv::Mat img_1 = cv::imread("test8.png");
+	cv::Mat img_2 = cv::imread("Monster8.png");
+
+	int resultImage_cols = img_1.cols - img_2.cols + 1;
+	int resultImage_rows = img_1.rows - img_2.rows + 1;
+	cv::Mat img_res;
+	img_res.create(resultImage_cols, resultImage_rows, CV_32FC1);
+	int iMatchMethod = 1;
+	cv::matchTemplate(img_1, img_2, img_res, iMatchMethod);
+	normalize(img_res, img_res, 0, 2, cv::NORM_MINMAX, -1, cv::Mat());
+	double minValue, maxValue;
+	cv::Point minLocation, maxLocation, matchLocation;
+	minMaxLoc(img_res, &minValue, &maxValue, &minLocation, &maxLocation);
+
+	if (iMatchMethod == cv::TM_SQDIFF || iMatchMethod == cv::TM_SQDIFF_NORMED)
+	{
+		matchLocation = minLocation;
+	}
+	else
+	{
+		matchLocation = maxLocation;
+	}
+
+	rectangle(img_1, matchLocation, cv::Point(matchLocation.x + img_2.cols, matchLocation.y + img_2.rows), cv::Scalar(0, 0, 255), 2, 8, 0);
+	rectangle(img_res, matchLocation, cv::Point(matchLocation.x + img_2.cols, matchLocation.y + img_2.rows), cv::Scalar(0, 0, 255), 2, 8, 0);
+
+	imshow("原始图", img_1);
+	imshow("效果图", img_res);
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 ST_POS StarsGraphy::FindPicture(const std::string& kPictureName, ST_RECT kRect)
@@ -402,11 +432,12 @@ ST_POS StarsGraphy::FIndPictureORB(GameORBInfo& kGameORBInfo, const std::string&
 		}
 	}
 
-	// -- dwaw matches 
+	////// -- dwaw matches 
 	cv::Mat img_mathes;
 	drawMatches(*(kGameORBInfo.img), kGameORBInfo.keypoints, *(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mathces, img_mathes);
 	// -- show 
 	cv::imshow("Mathces", img_mathes);
+
 	//char str[100];
 	//std::string kName = kPictureName.substr(0, kPictureName.size() - 4);
 	//sprintf_s(str, "com%d_%s.jpg", timeGetTime(), kName.c_str());
