@@ -6,6 +6,8 @@
 
 #define key_dat 0x60//键盘数据端口
 
+extern HWND g_iTargetGameHandle;
+
 void KBCwait4IBE() {
 
 	DWORD ch = 0; //注意，在这循环，我并没有改变键盘命令端口的数据，但也不会出现死循环，/ 因为键盘中断会在中间把数据读取并置零，那就不会导致死循环了
@@ -102,6 +104,10 @@ void StarsControl::Update()
 
 void StarsControl::OnKeyDown(DWORD dwKey)
 {
+	if (g_iTargetGameHandle == 0)
+	{
+		return;
+	}
 	if (dwKey >= VK_LEFT && dwKey <= VK_DOWN)
 	{
 		MakeKeyDownEx(dwKey);
@@ -114,6 +120,10 @@ void StarsControl::OnKeyDown(DWORD dwKey)
 
 void StarsControl::OnKeyUp(DWORD dwKey)
 {
+	if (g_iTargetGameHandle == 0)
+	{
+		return;
+	}
 	if (dwKey >= VK_LEFT && dwKey <= VK_DOWN)
 	{
 		MakeKeyUpEx(dwKey);

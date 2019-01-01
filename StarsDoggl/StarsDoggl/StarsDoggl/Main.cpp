@@ -15,6 +15,7 @@ ULONG_PTR			g_uiToken = 0;
 HINSTANCE			g_hInstance = 0;
 
 StarsGamePlayer g_kGamePlayer;
+HWND			g_iTargetGameHandle = 0;
 
 HWND g_hButtonCurrPut = 0;
 HWND g_hButtonAltStopAttack = 0;
@@ -336,12 +337,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		s_iFrameTime = timeGetTime();
 
+		if (g_iTargetGameHandle == 0)
+		{
+			g_iTargetGameHandle = FindWindowA(NULL, "地下城与勇士");
+		}
 		g_kGamePlayer.Update();
 	}
 	g_kGamePlayer.Finitalize();
 
 	FILE* pkFileLog = nullptr;
-	fopen_s(&pkFileLog,"StarsLog.txt", "a+");
+	fopen_s(&pkFileLog,"StarsLog.txt", "w+");
 	if (pkFileLog)
 	{
 		fputs(g_kLog.c_str(), pkFileLog);

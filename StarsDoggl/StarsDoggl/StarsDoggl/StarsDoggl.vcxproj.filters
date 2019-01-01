@@ -37,6 +37,9 @@
     <ClCompile Include="StarsGamePlayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StarsUtility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StarsGraphy.h">
@@ -54,10 +57,10 @@
     <ClInclude Include="StarsControl.h">
       <Filter>Source Files\StarsControl</Filter>
     </ClInclude>
-    <ClInclude Include="StarsUtility.h">
-      <Filter>Source Files\StarsGraphy</Filter>
-    </ClInclude>
     <ClInclude Include="StarsGamePlayer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StarsUtility.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

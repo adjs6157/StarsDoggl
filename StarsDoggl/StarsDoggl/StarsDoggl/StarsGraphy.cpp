@@ -22,6 +22,7 @@ StarsGraphy::~StarsGraphy()
 {
 	delete m_pkScreenShotDDRAW;
 	delete m_pkORBTool;
+	delete[] m_akQueue;
 }
 
 bool StarsGraphy::Initalize()
@@ -41,6 +42,7 @@ bool StarsGraphy::Initalize()
 	m_pkORBTool = new cv::ORB(5000, 1.2f, 3, 0, 0, 3, 0, 5);
 	m_pkMatcher = new cv::BFMatcher(cv::NORM_HAMMING2);
 	m_aiVisitPoint = new bool[iScreenShotWidth * iScreenShotHeight];
+	m_akQueue = new ST_POS[iScreenShotHeight * iScreenShotWidth];
 
 	m_kScreenORBInfo.aiPixelData = (unsigned char*)m_pkScreenShotData;// new unsigned char[iScreenShotWidth * iScreenShotHeight * 4];
 	m_kScreenORBInfo.img = new cv::Mat(iScreenShotHeight, iScreenShotWidth, CV_8UC4, m_kScreenORBInfo.aiPixelData);
@@ -95,19 +97,19 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 		}
 	}*/
 
-	if (timeGetTime() - m_iLastUpdateTimeORB > 2000)
-	{
-		m_iLastUpdateTimeORB = timeGetTime();
-		cv::Rect r1(kGameRect.left, kGameRect.top, kGameRect.right - kGameRect.left, kGameRect.bottom - kGameRect.top);
-		if (r1.x + r1.width > iScreenShotWidth) r1.width = iScreenShotWidth - r1.x;
-		if (r1.y + r1.height > iScreenShotHeight) r1.height = iScreenShotHeight - r1.y;
-		cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
-		mask(r1).setTo(255);
+	//if (timeGetTime() - m_iLastUpdateTimeORB > 2000)
+	//{
+	//	m_iLastUpdateTimeORB = timeGetTime();
+	//	cv::Rect r1(kGameRect.left, kGameRect.top, kGameRect.right - kGameRect.left, kGameRect.bottom - kGameRect.top);
+	//	if (r1.x + r1.width > iScreenShotWidth) r1.width = iScreenShotWidth - r1.x;
+	//	if (r1.y + r1.height > iScreenShotHeight) r1.height = iScreenShotHeight - r1.y;
+	//	cv::Mat mask = cv::Mat::zeros(m_kScreenORBInfo.img->size(), CV_8UC1);
+	//	mask(r1).setTo(255);
 
 
-		m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
-		m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
-	}
+	//	m_pkORBTool->detect(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, mask);
+	//	m_pkORBTool->compute(*(m_kScreenORBInfo.img), m_kScreenORBInfo.keypoints, *(m_kScreenORBInfo.descriptors));
+	//}
 
 	//RotateImg(m_pkScreenShotData);
 	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
@@ -316,7 +318,7 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////模板匹配/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	cv::Mat img_1 = cv::imread("test8.png");
+	/*cv::Mat img_1 = cv::imread("test8.png");
 	cv::Mat img_2 = cv::imread("Monster8.png");
 
 	int resultImage_cols = img_1.cols - img_2.cols + 1;
@@ -343,7 +345,7 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 	rectangle(img_res, matchLocation, cv::Point(matchLocation.x + img_2.cols, matchLocation.y + img_2.rows), cv::Scalar(0, 0, 255), 2, 8, 0);
 
 	imshow("原始图", img_1);
-	imshow("效果图", img_res);
+	imshow("效果图", img_res);*/
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -462,6 +464,17 @@ ST_POS StarsGraphy::FIndPictureORB(GameORBInfo& kGameORBInfo, const std::string&
 ST_POS StarsGraphy::FindFont(const std::string& kStr, ST_RECT kRect)
 {
 	return ST_POS(-1, -1);
+}
+
+ST_POS StarsGraphy::FindColor(DWORD dwColor, ST_RECT kRect, bool bFindColorBlock, ST_POS kStartPos)
+{
+	ST_POS kPoint;
+	kPoint.x = -1; kPoint.y = -1;
+
+	CheckRect(kRect, 0, 0);
+	kPoint = ComPareColorNormal(kRect.left, kRect.right, kRect.top, kRect.bottom, dwColor, bFindColorBlock, kStartPos);
+
+	return kPoint;
 }
 
 void StarsGraphy::LoadLocalPicture()
@@ -626,25 +639,28 @@ void StarsGraphy::GetFiles(std::string path, std::vector<std::string>& filePaths
 void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& kGamePictureInfo)
 {
 	memset(m_aiVisitPoint, 0, iScreenShotWidth * iScreenShotHeight);
-	std::queue<ST_POS> kQueue;
+	m_iQueueIndex = 0;
+	m_iQueueNum = 0;
 	ST_POS kStarPoint((iBeginX + iEndX) / 2, (iBeginY + iEndY) / 2);
-	kQueue.push(kStarPoint);
+	m_akQueue[m_iQueueNum] = kStarPoint;
+	m_iQueueNum++;
 	int iMaxIndex = iScreenShotWidth * iScreenShotHeight - 1;
 	const int aiDir[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
 	ST_POS kTempPoint;
 	int iTempIndex;
-	while (!kQueue.empty())
+	while (m_iQueueIndex < m_iQueueNum)
 	{
-		kStarPoint = kQueue.front();
-		kQueue.pop();
+		ST_POS &kCurPoint = m_akQueue[m_iQueueIndex];
+		m_iQueueIndex++;
 		for (int k = 0; k < 4; ++k)
 		{
-			kTempPoint.x = aiDir[k][0] + kStarPoint.x;
-			kTempPoint.y = aiDir[k][1] + kStarPoint.y;
+			kTempPoint.x = aiDir[k][0] + kCurPoint.x;
+			kTempPoint.y = aiDir[k][1] + kCurPoint.y;
 			iTempIndex = kTempPoint.x + kTempPoint.y * iScreenShotWidth;
 			if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
 			{
-				kQueue.push(kTempPoint);
+				m_akQueue[m_iQueueNum] = kTempPoint;
+				m_iQueueNum++;
 				m_aiVisitPoint[iTempIndex] = true;
 			}
 		}
@@ -660,7 +676,7 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 					continue;
 				}
 
-				if (kGamePictureInfo.aiPixelData[iTempIndex] == m_pkScreenShotData[(kStarPoint.y + k) * iScreenShotWidth + (kStarPoint.x + l)])
+				if (kGamePictureInfo.aiPixelData[iTempIndex] == m_pkScreenShotData[(kCurPoint.y + k) * iScreenShotWidth + (kCurPoint.x + l)])
 				{
 					iPixelPass++;
 				}
@@ -676,8 +692,8 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 		if (iPixelPass == kGamePictureInfo.iPixelCount)
 		{
 			kGamePictureInfo.fComPareRate = 1;
-			kGamePictureInfo.iComPareBeginX = kStarPoint.x;
-			kGamePictureInfo.iComPareBeginY = kStarPoint.y;
+			kGamePictureInfo.iComPareBeginX = kCurPoint.x;
+			kGamePictureInfo.iComPareBeginY = kCurPoint.y;
 		}
 	}
 
@@ -736,6 +752,87 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 
 	//SaveBmpFile("compare1.bmp", akGamePictureInfo.aiPixelData, akGamePictureInfo.iPixelWidth, akGamePictureInfo.iPixelHeight);
 	//SaveBmpFile("compare2.bmp", m_pkRotateImg32, iEndX, iEndY);
+}
+
+ST_POS StarsGraphy::ComPareColorNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, DWORD dwColor, bool bFindColorBlock, ST_POS kStartPos)
+{
+	memset(m_aiVisitPoint, 0, iScreenShotWidth * iScreenShotHeight);
+	m_iQueueIndex = 0;
+	m_iQueueNum = 0;
+	
+	if (kStartPos.x == -1 && kStartPos.y == -1)
+	{
+		m_akQueue[m_iQueueNum] = ST_POS((iBeginX + iEndX) / 2, (iBeginY + iEndY) / 2);
+	}
+	else
+	{
+		m_akQueue[m_iQueueNum] = kStartPos;
+	}
+
+	m_iQueueNum++;
+	int iMaxIndex = iScreenShotWidth * iScreenShotHeight - 1;
+	const int aiDir[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+	ST_POS kTempPoint;
+	int iTempIndex;
+	while (m_iQueueIndex < m_iQueueNum)
+	{
+		ST_POS &kCurPoint = m_akQueue[m_iQueueIndex];
+		m_iQueueIndex++;
+		for (int k = 0; k < 4; ++k)
+		{
+			kTempPoint.x = aiDir[k][0] + kCurPoint.x;
+			kTempPoint.y = aiDir[k][1] + kCurPoint.y;
+			iTempIndex = kTempPoint.x + kTempPoint.y * iScreenShotWidth;
+			if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
+			{
+				m_akQueue[m_iQueueNum] = kTempPoint;
+				m_iQueueNum++;
+				m_aiVisitPoint[iTempIndex] = true;
+			}
+		}
+
+		if (dwColor == m_pkScreenShotData[(kCurPoint.y) * iScreenShotWidth + (kCurPoint.x)])
+		{
+			// 不需要找色块直接返回
+			if (!bFindColorBlock)
+			{
+				return ST_POS(kCurPoint.x, kCurPoint.y);
+			}
+			else
+			{
+				int iTempBeginX = kCurPoint.x;
+				while (iTempBeginX > iBeginX && m_pkScreenShotData[kCurPoint.y * iScreenShotWidth + iTempBeginX - 1] == dwColor)
+				{
+					iTempBeginX--;
+				}
+				int iTempEndX = kCurPoint.x;
+				while (iTempEndX < iEndX && m_pkScreenShotData[kCurPoint.y * iScreenShotWidth + iTempEndX + 1] == dwColor)
+				{
+					iTempEndX++;
+				}
+				int iTempBeginY = kCurPoint.y;
+				while (iTempBeginY > iBeginY && m_pkScreenShotData[(iTempBeginY - 1) * iScreenShotWidth + kCurPoint.x] == dwColor)
+				{
+					iTempBeginY--;
+				}
+				int iTempEndY = kCurPoint.y;
+				while (iTempEndY < iEndY && m_pkScreenShotData[(iTempEndY + 1) * iScreenShotWidth + kCurPoint.x] == dwColor)
+				{
+					iTempEndY++;
+				}
+
+				int iDifX = iTempEndX - iTempBeginX;
+				int iDifY = iTempEndY - iTempBeginY;
+				if (iDifX* iDifY >= 4)
+				{
+					return ST_POS(iTempBeginX + iDifX / 2, iTempBeginY + iDifY * 0.8);
+				}
+			}
+
+		}
+	}
+
+	return ST_POS(-1, -1);
 }
 
 void StarsGraphy::CheckRect(ST_RECT& kRect, int iWidth, int iHeight)

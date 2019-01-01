@@ -83,6 +83,7 @@ public:
 	ST_POS FIndPictureORB(const std::string& kPictureName);
 	ST_POS FIndPictureORB(GameORBInfo& kGameORBInfo, const std::string& kPictureName);
 	ST_POS FindFont(const std::string& kStr, ST_RECT kRect);
+	ST_POS FindColor(DWORD dwColor, ST_RECT kRect, bool bFindColorBlock = true, ST_POS kStartPos = ST_POS(-1, -1));
 	
 private:
 	void CheckRect(ST_RECT& kRect);
@@ -92,6 +93,7 @@ private:
 	void LoadFont();
 	void GetFiles(std::string path, std::vector<std::string>& filePaths, std::vector<std::string>& fileNames);
 	void ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& akGamePictureInfo);
+	ST_POS ComPareColorNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, DWORD dwColor, bool bFindColorBlock = true, ST_POS kStartPos = ST_POS(-1, -1));
 	void CheckRect(ST_RECT& kRect, int iWidth, int iHeight);
 private:
 	ScreenShotDDRAW* m_pkScreenShotDDRAW;
@@ -108,4 +110,7 @@ private:
 	cv::ORB* m_pkORBTool;
 	cv::BFMatcher* m_pkMatcher;
 	bool*	m_aiVisitPoint;
+	ST_POS* m_akQueue;
+	int	m_iQueueIndex;
+	int m_iQueueNum;
 };

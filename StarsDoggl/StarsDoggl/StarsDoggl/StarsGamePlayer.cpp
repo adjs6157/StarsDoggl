@@ -1,7 +1,15 @@
 #include "StarsGamePlayer.h"
 
+#define COLOR_MONSTER 0xFFFF00FF
+#define COLOR_BOSS 0xFFFFFFFF
+#define COLOR_DOOR 0xFFFFFFFF
+#define COLOR_OBJECT 0xFFFFFFFF
+#define COLOR_BLOCK 0xFFFFFFFF
+
+
 extern int iScreenShotWidth;
 extern int iScreenShotHeight;
+extern HWND g_iTargetGameHandle;
 extern void PrintLog(const char *format, ...);
 
 StarsGamePlayer::StarsGamePlayer()
@@ -14,10 +22,10 @@ StarsGamePlayer::StarsGamePlayer()
 	m_iUpDownEndTime = 0;
 	m_iLeftRightEndTime = 0;
 	m_bStartAttack = false;
-	m_iGameHandle = 0;
 	m_iLastUpdaetPlayerPos = 0;
 	m_bAllClear = false;
 	m_eSceneState = StarsSceneState_None;
+	m_ePlayerSide = StarsRunDirection_Left;
 }
 
 StarsGamePlayer::~StarsGamePlayer()
@@ -41,8 +49,6 @@ bool StarsGamePlayer::Initalize()
 		MessageBoxA(NULL, "g_kStarsControl初始化失败", "Warning", MB_OK);
 		return false;
 	}
-
-	m_iGameHandle = FindWindowA(NULL, "DNF");
 	return true;
 }
 
@@ -55,22 +61,18 @@ bool StarsGamePlayer::Finitalize()
 
 void StarsGamePlayer::Update()
 {
-	
-	if (m_iGameHandle == 0)
+	if (g_iTargetGameHandle == 0)
 	{
-		m_iGameHandle = FindWindowA(NULL, "地下城与勇士");
-
 		m_kGameRect.left = 0;
-		m_kGameRect.right = 800;
+		m_kGameRect.right = 830;
 		m_kGameRect.top = 0;
-		m_kGameRect.bottom = 600;
-		m_pkStarsGraphy->Update(m_kGameRect);
-		return;
+		m_kGameRect.bottom = 750;
+		//return;
 	}
 	else
 	{
 		RECT kGameRect;
-		GetWindowRect(m_iGameHandle, &kGameRect);
+		GetWindowRect(g_iTargetGameHandle, &kGameRect);
 		
 		m_kGameRect.left = kGameRect.left;
 		m_kGameRect.right = kGameRect.right;
@@ -107,47 +109,54 @@ void StarsGamePlayer::Update()
 void StarsGamePlayer::UpdateBattle()
 {
 
-	if (timeGetTime() - m_iLastUpdaetPlayerPos > 2000)
+	if (timeGetTime() - m_iLastUpdaetPlayerPos > 500)
 	{
 		m_iLastUpdaetPlayerPos = timeGetTime();
-		m_kPlayerPos = FindPicture("PlayerName.bmp", m_kGameRect);
-		//if (m_kPlayerPos.x != -1)
-		//{
-		//	ActionRun(500, 0);
-		//}
-
-		if (!m_bAllClear)
+		ST_POS kPlayerPos = FindPicture("PlayerName.bmp", ST_RECT(m_kGameRect.left, m_kGameRect.right, m_kGameRect.top + 155, m_kGameRect.bottom));
+		if (kPlayerPos.x != -1)
 		{
-			ST_POS kMapPos = FindPicture("NextDoor.bmp", m_kGameRect);
-			if (kMapPos.x != -1)
-			{
-				m_bAllClear = true;
-				m_eBattleState = StarsBattleState_AllClear;
-			}
+			m_kPlayerPos = kPlayerPos;
+			m_kPlayerPos.y += 120;
+			m_kPlayerPos.x += 35;
 		}
+
+		m_kNearMonsterPos = FindMonster(m_kGameRect, ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
 	}
+
+	//if (!m_bAllClear)
+	//{
+	//	ST_POS kMapPos = FindPicture("NextDoor.bmp", m_kGameRect);
+	//	if (kMapPos.x != -1)
+	//	{
+	//		m_bAllClear = true;
+	//		m_eBattleState = StarsBattleState_AllClear;
+	//	}
+	//}
+	
 
 	switch (m_eBattleState)
 	{
 	case StarsBattleState_Start:
 	{
-								   ActionRun(500, 0);
+								   Patrol();
 								   m_eBattleState = StarsBattleState_FindMonster;
 								   PrintLog("ChangeState:FindMonster");
 								   break;
 	}
 	case StarsBattleState_FindMonster:
 	{
-										 ST_POS kMonsterPos = FindMonster();
-										 if (kMonsterPos.x != -1 && kMonsterPos.y != -1)
+										 if (m_kNearMonsterPos.x != -1 && m_kNearMonsterPos.y != -1)
 										 {
-											 ActionRun(kMonsterPos.x - 400, kMonsterPos.y - 300);
+											 ActionRun(m_kNearMonsterPos.x - m_kPlayerPos.x, m_kNearMonsterPos.y - m_kPlayerPos.y);
 											 m_eBattleState = StarsBattleState_GoMonster;
-											 PrintLog("ChangeState:GoMonster");
+											 PrintLog("PlayerPos:%d, %d", m_kPlayerPos.x, m_kPlayerPos.y);
+											 PrintLog("MonsterPos:%d, %d", m_kNearMonsterPos.x, m_kNearMonsterPos.y);
+											 PrintLog("ChangeState:GoMonster %d,%d", m_kNearMonsterPos.x - m_kPlayerPos.x, m_kNearMonsterPos.y - m_kPlayerPos.y);
 										 }
 										 else
 										 {
-											 ActionRun(500, 0);
+											 Patrol();
+											 PrintLog("Patrol");
 										 }
 										 break;
 	}
@@ -162,17 +171,22 @@ void StarsGamePlayer::UpdateBattle()
 	}
 	case StarsBattleState_AttackMonster:
 	{
-										   ActionAttack(true);
-										   ST_POS kMonsterPos = FindMonster();
-										   if (kMonsterPos.x == -1 && kMonsterPos.y == -1)
+										   if (m_kNearMonsterPos.x == -1 && m_kNearMonsterPos.y == -1)
 										   {
 											   m_eBattleState = StarsBattleState_FindMonster;
-											   PrintLog("ChangeState:FindMonster");
+											   PrintLog("LostTarget:FindMonster");
+											   ActionAttack(false);
+										   }
+										   else if (fabsf(m_kNearMonsterPos.x - m_kPlayerPos.x) > 90 || fabsf(m_kNearMonsterPos.y - m_kPlayerPos.y) > 20)
+										   {
+											   PrintLog("MonsterXoutOfRange::%d,%d", m_kNearMonsterPos.x, m_kNearMonsterPos.y);
+											   ActionAttack(false);
+											   ActionRun(m_kNearMonsterPos.x - m_kPlayerPos.x, m_kNearMonsterPos.y - m_kPlayerPos.y);
 										   }
 										   else
 										   {
-											   PrintLog("MonsterX:%d,MonsterY%d",kMonsterPos.x,kMonsterPos.y);
-											   ActionRun(kMonsterPos.x - 400, kMonsterPos.y - 300);
+											   ActionAttack(true);
+											   PrintLog("AttackMonster::%d,%d", m_kNearMonsterPos.x, m_kNearMonsterPos.y);
 										   }
 										   break;
 	}
@@ -216,46 +230,6 @@ void StarsGamePlayer::UpdateBattle()
 	UpdateAttack();
 }
 
-void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
-{
-	if (m_eLeftRight != StarsRunDirection_None)
-	{
-		m_pkStarsControl->OnKeyUp(m_eLeftRight == StarsRunDirection_Left ? VK_LEFT : VK_RIGHT);
-		m_eLeftRight = StarsRunDirection_None;
-		m_iLeftRightEndTime = 0;
-	}
-
-	if (m_eRunUpDown != StarsRunDirection_None)
-	{
-		m_pkStarsControl->OnKeyUp(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
-		m_eRunUpDown = StarsRunDirection_None;
-		m_iUpDownEndTime = 0;
-	}
-
-
-	if (fDisX != 0)
-	{
-		m_eLeftRight = fDisX > 0 ? StarsRunDirection_Right : StarsRunDirection_Left;
-		m_iLeftRightEndTime = fabsf(fDisX) / 60 * 1000 + timeGetTime();
-		m_pkStarsControl->OnKeyDown(m_eLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
-		Sleep(20);
-		m_pkStarsControl->OnKeyUp(m_eLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
-		Sleep(20);
-		m_pkStarsControl->OnKeyDown(m_eLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
-	}
-	if (fDisY != 0)
-	{
-		m_eRunUpDown = fDisY > 0 ? StarsRunDirection_Down : StarsRunDirection_Up;
-		m_iUpDownEndTime = fabsf(fDisY) / 30 * 1000 + timeGetTime();
-		m_pkStarsControl->OnKeyDown(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
-		Sleep(20);
-		m_pkStarsControl->OnKeyUp(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
-		Sleep(20);
-		m_pkStarsControl->OnKeyDown(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
-	}
-	
-}
-
 ST_POS StarsGamePlayer::FindPicture(std::string kPictureName, ST_RECT kRect, bool bUseLocalPos)
 {
 	ST_POS kPos = m_pkStarsGraphy->FindPicture(kPictureName, kRect);
@@ -289,13 +263,95 @@ ST_POS StarsGamePlayer::FindFont(std::string kStr, ST_RECT kRect, bool bUseLocal
 	return kPos;
 }
 
+ST_POS StarsGamePlayer::FindColor(DWORD dwColor, ST_RECT kRect, bool bUseLocalPos, ST_POS kStartPos)
+{
+	ST_POS kPos = m_pkStarsGraphy->FindColor(dwColor, kRect, true, kStartPos);
+	if (bUseLocalPos && kPos.x != -1)
+	{
+		kPos.x -= m_kGameRect.left;
+		kPos.y -= m_kGameRect.top;
+	}
+	return kPos;
+}
+
+void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
+{
+	if (fDisX != 0)
+	{
+		StarsRunDirection eTmepLeftRight = fDisX > 0 ? StarsRunDirection_Right : StarsRunDirection_Left;
+		if (m_eLeftRight == StarsRunDirection_None)
+		{
+			m_pkStarsControl->OnKeyDown(eTmepLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
+			Sleep(20);
+			m_pkStarsControl->OnKeyUp(eTmepLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
+			Sleep(20);
+			m_pkStarsControl->OnKeyDown(eTmepLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
+			Sleep(20);
+		}
+		else if (eTmepLeftRight != m_eLeftRight)
+		{
+			m_pkStarsControl->OnKeyUp(eTmepLeftRight == StarsRunDirection_Right ? VK_LEFT : VK_RIGHT);
+			Sleep(20);
+			m_pkStarsControl->OnKeyDown(eTmepLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
+			Sleep(20);
+			m_pkStarsControl->OnKeyUp(eTmepLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
+			Sleep(20);
+			m_pkStarsControl->OnKeyDown(eTmepLeftRight == StarsRunDirection_Right ? VK_RIGHT : VK_LEFT);
+			Sleep(20);
+		}
+
+		m_eLeftRight = eTmepLeftRight;
+		m_iLeftRightEndTime = fabsf(fDisX) / 200 * 1000 + timeGetTime();
+		
+	}
+	else if (m_eLeftRight != StarsRunDirection_None)
+	{
+		m_pkStarsControl->OnKeyUp(m_eLeftRight == StarsRunDirection_Left ? VK_LEFT : VK_RIGHT);
+		Sleep(20);
+		m_eLeftRight = StarsRunDirection_None;
+		m_iLeftRightEndTime = 0;
+	}
+
+	if (fDisY != 0)
+	{
+		StarsRunDirection eTempUpDown = fDisY > 0 ? StarsRunDirection_Down : StarsRunDirection_Up;
+
+		if (m_eRunUpDown == StarsRunDirection_None)
+		{
+			m_pkStarsControl->OnKeyDown(eTempUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
+			Sleep(20);
+		}
+		else if (eTempUpDown != m_eRunUpDown)
+		{
+			m_pkStarsControl->OnKeyUp(eTempUpDown == StarsRunDirection_Up ? VK_DOWN : VK_UP);
+			Sleep(20);
+			m_pkStarsControl->OnKeyDown(eTempUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
+			Sleep(20);
+		}
+
+		m_eRunUpDown = eTempUpDown;
+		m_iUpDownEndTime = fabsf(fDisY) / 100 * 1000 + timeGetTime();
+		
+	}
+	else if(m_eRunUpDown != StarsRunDirection_None)
+	{
+		m_pkStarsControl->OnKeyUp(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
+		Sleep(20);
+		m_eRunUpDown = StarsRunDirection_None;
+		m_iUpDownEndTime = 0;
+	}
+}
+
 void StarsGamePlayer::UpdateRun()
 {
 	if (m_iLeftRightEndTime != 0 && timeGetTime() > m_iLeftRightEndTime)
 	{
 		if (m_eLeftRight != StarsRunDirection_None)
 		{
-			m_pkStarsControl->OnKeyUp(m_eLeftRight == StarsRunDirection_Left ? VK_LEFT : VK_RIGHT);
+			m_pkStarsControl->OnKeyUp(VK_LEFT);
+			Sleep(20);
+			m_pkStarsControl->OnKeyUp(VK_RIGHT);
+			Sleep(20);
 			m_eLeftRight = StarsRunDirection_None;
 		}
 		m_iLeftRightEndTime = 0;
@@ -305,7 +361,10 @@ void StarsGamePlayer::UpdateRun()
 	{
 		if (m_eRunUpDown != StarsRunDirection_None)
 		{
-			m_pkStarsControl->OnKeyUp(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
+			m_pkStarsControl->OnKeyUp(VK_UP);
+			Sleep(20);
+			m_pkStarsControl->OnKeyUp(VK_DOWN);
+			Sleep(20);
 			m_eRunUpDown = StarsRunDirection_None;
 		}
 		m_iUpDownEndTime = 0;
@@ -321,13 +380,22 @@ void StarsGamePlayer::ActionAttack(bool bStart)
 	}
 	else
 	{
+		if (m_iEndAttackTime != 0)
+		{
+			m_pkStarsControl->OnKeyDown('V');
+			Sleep(20);
+			m_pkStarsControl->OnKeyDown('V');
+			Sleep(20);
+			m_pkStarsControl->OnKeyUp('V');
+			Sleep(20);
+		}
 		m_iEndAttackTime = 0;
 	}
 }
 
 void StarsGamePlayer::UpdateAttack()
 {
-	if (timeGetTime() > m_iEndAttackTime)
+	if (timeGetTime() > m_iEndAttackTime && m_bStartAttack)
 	{
 		m_iEndAttackTime = 0;
 		m_bStartAttack = false;
@@ -335,26 +403,41 @@ void StarsGamePlayer::UpdateAttack()
 
 	if (m_bStartAttack)
 	{
+		ActionRun(0, 0);
+		m_pkStarsControl->OnKeyDown('X');
+		Sleep(20);
 		m_pkStarsControl->OnKeyDown('X');
 		Sleep(20);
 		m_pkStarsControl->OnKeyUp('X');
+		Sleep(20);
 	}
 }
 
-ST_POS StarsGamePlayer::FindMonster()
+// 巡逻
+void StarsGamePlayer::Patrol()
 {
-	char str[50];
-	for (int i = 1; i <= 10; ++i)
+	if (m_kPlayerPos.x < 260)
 	{
-		sprintf_s(str, "Monster%d.bmp", i);
-		ST_POS kMonsterPos = FIndPictureORB(str);
-		if (kMonsterPos.x != -1 && kMonsterPos.y != -1)
-		{
-			PrintLog("FindMonster:%s", str);
-			return kMonsterPos;
-		}
+		m_ePlayerSide = StarsRunDirection_Left;
 	}
-	return ST_POS(-1, -1);
+	else if (m_kPlayerPos.x > 540)
+	{
+		m_ePlayerSide = StarsRunDirection_Right;
+	}
+
+	if (m_ePlayerSide == StarsRunDirection_Left)
+	{
+		ActionRun(500, 0);
+	}
+	else
+	{
+		ActionRun(-500, 0);
+	}
+}
+
+ST_POS StarsGamePlayer::FindMonster(const ST_RECT& kRect, ST_POS kStartPos)
+{
+	return FindColor(COLOR_MONSTER, kRect, true, kStartPos);
 }
 
 void StarsGamePlayer::SetSceneState(StarsSceneState eState)

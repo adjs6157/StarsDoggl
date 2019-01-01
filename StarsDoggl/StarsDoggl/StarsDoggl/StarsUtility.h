@@ -1,4 +1,7 @@
+#ifndef STARS_UTILITY
+#define STARS_UTILITY
 #include <windows.h>
+#include <math.h>
 
 struct ST_RECT
 {
@@ -38,3 +41,6 @@ struct ST_POS
 	int x;
 	int y;
 };
+
+float GetDistance(float fX1, float fY1, float fX2, float fY2);
+#endif
