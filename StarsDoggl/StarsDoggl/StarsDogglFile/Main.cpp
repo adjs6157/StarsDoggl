@@ -63,14 +63,15 @@ bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index
 
 	fread(&kNpkHeader, sizeof(NPK_Header), 1, fp);
 
-	akNpkIndex.reserve(kNpkHeader.count);
+	akNpkIndex.resize(kNpkHeader.count);
+	//akNpkIndex.reserve(kNpkHeader.count);
 	for (int i = 0; i < kNpkHeader.count; ++i)
 	{
 		fread(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fp);
 	}
 
-	akImgHeader.reserve(kNpkHeader.count);
-	akImgIndex.reserve(kNpkHeader.count);
+	akImgHeader.resize(kNpkHeader.count);
+	akImgIndex.resize(kNpkHeader.count);
 	for (int i = 0; i < kNpkHeader.count; ++i)
 	{
 		for (int j = 0; j < 256; ++j)
@@ -156,7 +157,7 @@ bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index
 		}
 		if (akImgHeader[i].version != 1)
 		{
-			akImgIndex[i].reserve(akImgHeader[i].index_count);
+			akImgIndex[i].resize(akImgHeader[i].index_count);
 			for (int j = 0; j < akImgHeader[i].index_count; ++j)
 			{
 				fread(&(akImgIndex[i][j].dwType), sizeof(int), 1, fp);
@@ -236,6 +237,47 @@ void SplitStr(const std::string& rkStr, const std::string& rkSep, std::vector<st
 	} while (uiPos != std::string::npos);
 }
 
+bool CheckNPKNameType(const std::string kPictureName, starsImgType eType)
+{
+	std::string kPictureNameTemp = kPictureName.substr(0, kPictureName.size() - 4);
+	std::string kFilePreName = "";
+	std::string kFileEndName = "";
+	std::string kFileEndName1 = "";
+	switch (eType)
+	{
+	case SIMG_NONE:
+		return false;
+		break;
+	case SIMG_MONSTER:
+		kFilePreName = "sprite_monster";
+		break;
+	case SIMG_OBJECT:
+	case SIMG_BLOCK:
+		kFilePreName = "sprite_map";
+		kFileEndName = "obj";
+		kFileEndName1 = "object";
+		break;
+	case SIMG_PATHGATE:
+		kFilePreName = "sprite_map";
+		kFileEndName = "gate";
+		kFileEndName1 = "pathgate";
+		break;
+	case SIMG_ITEM:
+		return false;
+		break;
+	default:
+		break;
+	}
+
+	if (kPictureNameTemp[0] != 's') return false;
+	if (kPictureNameTemp.find(kFilePreName) != 0) return false;
+	if (kFileEndName.length() == 0 && kFileEndName1.length() == 0) return true;
+	if (kFileEndName.length() != 0 && kPictureNameTemp.find(kFileEndName) == kPictureNameTemp.size() - kFileEndName.size()) return true;
+	if (kFileEndName1.length() != 0 && kPictureNameTemp.find(kFileEndName1) == kPictureNameTemp.size() - kFileEndName1.size()) return true;
+
+	return false;
+}
+
 void GetFiles(std::string path, std::vector<std::string>& filePaths, std::vector<std::string>& fileNames)
 {
 	//文件句柄  
@@ -268,35 +310,6 @@ void OutPutAutoConfig(starsImgType eType)
 {
 	std::map<std::string, std::map<std::string, int>> akImgType;
 
-	std::string kFilePreName = "";
-	std::string kFileEndName = "";
-	std::string kFileEndName1 = "";
-	switch (eType)
-	{
-	case SIMG_NONE:
-		return;
-		break;
-	case SIMG_MONSTER:
-		kFilePreName = "sprite_monster";
-		break;
-	case SIMG_OBJECT:
-	case SIMG_BLOCK:
-		kFilePreName = "sprite_map";
-		kFileEndName = "obj.NPK";
-		kFileEndName1 = "object.NPK";
-		break;
-	case SIMG_PATHGATE:
-		kFilePreName = "sprite_map";
-		kFileEndName = "gate.NPK";
-		kFileEndName1 = "pathgate.NPK";
-		break;
-	case SIMG_ITEM:
-		return;
-		break;
-	default:
-		break;
-	}
-
 	NPK_Header kNpkHeader;
 	std::vector<NPK_Index> akNpkIndex;
 	std::vector<NImgF_Header> akImgHeader;
@@ -308,10 +321,9 @@ void OutPutAutoConfig(starsImgType eType)
 
 	for (int i = 0; i < akPictureName.size(); ++i)
 	{
+		printf("%d/%d\n", i, akPictureName.size());
 		std::string& kPictureName = akPictureName[i];
-		if (kPictureName[0] != 's') continue;
-		if (kPictureName.find(kFilePreName) != 0) continue;
-		if (kPictureName.find(kFileEndName) != kPictureName.size() - kFileEndName.size() && kPictureName.find(kFileEndName1) != kPictureName.size() - kFileEndName1.size()) continue;
+		if (!CheckNPKNameType(kPictureName, eType)) continue;
 
 		akNpkIndex.clear();
 		akImgHeader.clear();
@@ -334,7 +346,7 @@ void OutPutAutoConfig(starsImgType eType)
 			std::string kImgName = akNpkIndex[j].name;
 			if (eType == SIMG_MONSTER)
 			{
-				kImgName  += "|SIMG_MONSTER";
+				kImgName  += "|SIMG_MONSTER\n";
 				fputs(kImgName.c_str(), fp);
 				fPass = true;
 			}
@@ -347,7 +359,7 @@ void OutPutAutoConfig(starsImgType eType)
 					std::string kImgNameNext = akNpkIndex[j + 1].name;
 					if (kImgNameTemp == kImgNameNext)
 					{
-						kImgName += "|SIMG_OBJECT";
+						kImgName += "|SIMG_OBJECT\n";
 						fputs(kImgName.c_str(), fp);
 						fPass = true;
 					}
@@ -355,16 +367,18 @@ void OutPutAutoConfig(starsImgType eType)
 			}
 			else if (eType == SIMG_PATHGATE)
 			{
-
+				kImgName += "|SIMG_PATHGATE\n";
+				fputs(kImgName.c_str(), fp);
+				fPass = true;
 			}
 			else if (eType == SIMG_ITEM)
 			{
-
+				
 			}
 			
 			if (!fPass)
 			{
-				kImgName += "|SIMG_NONE";
+				kImgName += "|SIMG_NONE\n";
 				fputs(kImgName.c_str(), fp);
 			}
 		}
@@ -394,12 +408,13 @@ void OutPutCombineConfig()
 			SplitStr(kStr, "|", akSplitStr);
 			if (akSplitStr.size() == 2)
 			{
+				akSplitStr[1].erase(akSplitStr[1].size() - 1);
 				akImgComfig[akPictureNameAuto[i]][akSplitStr[0]] = akSplitStr[1];
 			}
 		}
 		fclose(fp);
 	}
-
+	printf("%d/%d\n", 1, 3);
 	std::vector<std::string> akPicturePathManual;
 	std::vector<std::string> akPictureNameManual;
 	GetFiles("./FileConfig/Manual/", akPicturePathManual, akPictureNameManual);
@@ -416,12 +431,13 @@ void OutPutCombineConfig()
 			SplitStr(kStr, "|", akSplitStr);
 			if (akSplitStr.size() == 2)
 			{
+				akSplitStr[1].erase(akSplitStr[1].size() - 1);
 				akImgComfig[akPictureNameManual[i]][akSplitStr[0]] = akSplitStr[1];
 			}
 		}
 		fclose(fp);
 	}
-
+	printf("%d/%d\n", 2, 3);
 	std::map<std::string, std::map<std::string, std::string>>::iterator itr = akImgComfig.begin();
 	for (; itr != akImgComfig.end(); itr++)
 	{
@@ -440,14 +456,16 @@ void OutPutCombineConfig()
 			std::string kResult = itrSub->first;
 			kResult += "|";
 			kResult += itrSub->second;
+			kResult += "\n";
 			fputs(kResult.c_str(), fp);
 		}
 
 		fclose(fp);
 	}
+	printf("%d/%d\n", 3, 3);
 }
 
-void ExportNPKFiles()
+void ExportNPKFiles(starsImgType eStarsImgTYpe)
 {
 	char kStr[256];
 	std::vector<std::string> akSplitStr;
@@ -456,8 +474,11 @@ void ExportNPKFiles()
 	std::vector<std::string> akPicturePathCombine;
 	std::vector<std::string> akPictureNameCombine;
 	GetFiles("./FileConfig/Combine/", akPicturePathCombine, akPictureNameCombine);
+	int iNpcCount = 0;
 	for (int i = 0; i < akPicturePathCombine.size(); ++i)
 	{
+		if (!CheckNPKNameType(akPictureNameCombine[i], eStarsImgTYpe)) continue;
+
 		FILE *fp = fopen(akPicturePathCombine[i].c_str(), "r+");
 		if (!fp)
 		{
@@ -469,10 +490,12 @@ void ExportNPKFiles()
 			SplitStr(kStr, "|", akSplitStr);
 			if (akSplitStr.size() == 2)
 			{
+				akSplitStr[1].erase(akSplitStr.size() - 1);
 				akImgComfig[akPictureNameCombine[i]][akSplitStr[0]] = akSplitStr[1];
 			}
 		}
 		fclose(fp);
+		iNpcCount++;
 	}
 
 	NPK_Header kNpkHeader;
@@ -481,8 +504,11 @@ void ExportNPKFiles()
 	std::vector<std::vector<NImgF_Index>> akImgIndex;
 	std::map<std::string, std::map<std::string, std::string>>::iterator itr = akImgComfig.begin();
 	unsigned int iColorTemp[1920 * 1080];
+	int iCurNpkCount = 0;
 	for (; itr != akImgComfig.end(); itr++)
 	{
+		printf("%d/%d\n", iCurNpkCount, iNpcCount);
+		iCurNpkCount++;
 		std::string kName = GAME_IMG_PATH;
 		kName += itr->first.substr(0, itr->first.size() - 4);
 		kName += ".NPK";
@@ -493,6 +519,7 @@ void ExportNPKFiles()
 		ReadNPKFile(kName, kNpkHeader, akNpkIndex, akImgHeader, akImgIndex);
 
 		kName = "./FileExport/";
+		kName += "a";
 		kName += itr->first.substr(0, itr->first.size() - 4);
 		kName += ".NPK";
 
@@ -511,6 +538,7 @@ void ExportNPKFiles()
 			return;
 		}
 		// 计算文件大小
+		std::vector<std::string> akNameUncompress;
 		int iSizeOffset = 0;
 		iSizeOffset += sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count;
 		for (int i = 0; i < kNpkHeader.count; ++i)
@@ -519,10 +547,18 @@ void ExportNPKFiles()
 			iSizeCount += 4 * 8;
 			for (int j = 0; j < akImgHeader[i].index_count; ++j)
 			{
-				iSizeCount += 4 * 9;
-				iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+				if (j == 0)
+				{
+					iSizeCount += 4 * 9;
+					iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+				}
+				else
+				{
+					iSizeCount += 4 * 2;
+				}
 			}
 
+			akNameUncompress.push_back(akNpkIndex[i].name);
 			akNpkIndex[i].size = iSizeCount;
 			akNpkIndex[i].offset = iSizeOffset;
 			for (int j = 0; j < 256; ++j)
@@ -550,18 +586,77 @@ void ExportNPKFiles()
 			int iAllPixlCount = 0;
 			for (int j = 0; j < akImgHeader[i].index_count; ++j)
 			{
-				akImgIndex[i][j].dwType = ARGB8888;
-				fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
-				akImgIndex[i][j].dwCompress = COMP_NONE;
-				fwrite(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].width), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].height), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].size), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].key_x), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].key_y), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
-				fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
-				iAllPixlCount += akImgIndex[i][j].width * akImgIndex[i][j].height;
+				if (j == 0)
+				{
+					akImgIndex[i][j].dwType = ARGB8888;
+					fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
+					akImgIndex[i][j].dwCompress = COMP_NONE;
+					fwrite(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].width), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].height), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].size), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].key_x), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].key_y), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
+					fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
+					iAllPixlCount += akImgIndex[i][j].width * akImgIndex[i][j].height;
+					std::string& kSImgType = itr->second[akNameUncompress[i]];
+
+					int iMonsterHeight = 0;
+					unsigned int iTempColor = 0;
+					if (kSImgType == "SIMG_MONSTER")
+					{
+						iMonsterHeight = akImgIndex[i][j].height - 35;
+						iTempColor = SCOLOR_MONSTER;
+					}
+					else if (kSImgType == "SIMG_OBJECT")
+					{
+						iMonsterHeight = akImgIndex[i][j].height - 35;
+						iTempColor = SCOLOR_OBJECT;
+					}
+					else if (kSImgType == "SIMG_BLOCK")
+					{
+						iMonsterHeight = akImgIndex[i][j].height - 35;
+						iTempColor = SCOLOR_BLOCK;
+					}
+					else if (kSImgType == "SIMG_PATHGATE")
+					{
+						iMonsterHeight = 0;
+						iTempColor = SCOLOR_PATHGATE;
+					}
+					else if (kSImgType == "SIMG_ITEM")
+					{
+						iMonsterHeight = 0;
+						iTempColor = SCOLOR_ITEM;
+					}
+					else
+					{
+						iMonsterHeight = 0;
+						iTempColor = 0;
+					}
+
+					for (int k = 0; k < akImgIndex[i][j].height; ++k)
+					{
+						for (int l = 0; l < akImgIndex[i][j].width; ++l)
+						{
+							if (k >= iMonsterHeight)
+							{
+								iColorTemp[k * akImgIndex[i][j].width + l] = iTempColor;
+							}
+							else
+							{
+								iColorTemp[k * akImgIndex[i][j].width + l] = 0x00000000;
+							}
+						}
+					}
+				}
+				else
+				{
+					akImgIndex[i][j].dwType = LINK;
+					fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
+					akImgIndex[i][j].iLinkNum = 0;
+					fwrite(&(akImgIndex[i][j].iLinkNum), sizeof(int), 1, fpMy);
+				}
 			}
 			fwrite(iColorTemp, sizeof(int), iAllPixlCount, fpMy);
 		}
@@ -816,18 +911,38 @@ int main()
 	char a;
 	while (a = getchar())
 	{
-		if (a == '1')
+		getchar();
+		if (a == '1' || a == '3')
 		{
-			a = '1';
+			
+			if (a == '1')
+			{
+				printf("ExportAutoConfig\n");
+			}
+			else
+			{
+				printf("ExportNPKFiles\n");
+			}
+			printf("1:SIMG_MONSTER\n2:SIMG_OBJECT\n3:SIMG_BLOCK\n4:SIMG_PATHGATE\n5:SIMG_ITEM\n");
+			char b = getchar();
+			getchar();
+			if (a == '1')
+			{
+				OutPutAutoConfig(starsImgType(b - '1' + 1));
+				printf("Done!\n");
+			}
+			else
+			{
+				ExportNPKFiles(SIMG_OBJECT/*starsImgType(b - '1' + 1)*/);
+				printf("Done!\n");
+			}
 		}
 		else if (a == '2')
 		{
-
+			OutPutCombineConfig();
+			printf("Done!\n");
 		}
-		else if (a == '3')
-		{
-
-		}
+		printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n");
 	}
 	return 0;
 }
