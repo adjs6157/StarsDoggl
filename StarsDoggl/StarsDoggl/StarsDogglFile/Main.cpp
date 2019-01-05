@@ -4,9 +4,13 @@
 #include <io.h>
 #include <direct.h>
 #include <vector>
+#include <map>
 
 enum compressType{ COMP_NONE = 5, COMP_ZLIB = 6, COMP_ZLIB2 = 7, COMP_UDEF = 0 };
 enum colorFormat{ ARGB8888 = 0x10, ARGB4444 = 0x0F, ARGB1555 = 0x0E, LINK = 0x11, DDS_DXT1 = 0x12, DDS_DXT3 = 0x13, DDS_DXT5 = 0x14, COLOR_UDEF = 0, V4_FMT, RGB565 };
+enum starsImgType{ SIMG_NONE = 0, SIMG_MONSTER = 1, SIMG_OBJECT = 2, SIMG_BLOCK = 3, SIMG_PATHGATE = 4, SIMG_ITEM = 5 };
+enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00, SCOLOR_ITEM = 0xFF00FF00 };
+#define GAME_IMG_PATH "E:\\Game\\腾讯游戏\\地下城与勇士\\ImagePacks2\\"
 
 struct NPK_Header
 {
@@ -49,19 +53,520 @@ struct NImgF_Index
 	int iLinkNum;
 };
 
-
-std::string GetNpkFileName(char *pData, unsigned int maxLen)
+bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index>& akNpkIndex, std::vector<NImgF_Header>& akImgHeader, std::vector<std::vector<NImgF_Index>>& akImgIndex)
 {
-	std::string name;
-	for (int i = 0; i < maxLen; ++i)
+	FILE *fp = fopen(path.c_str(), "rb");
+	if (!fp)
 	{
-		if ((pData[i] >= 'a' && pData[i] <= 'z')
-			|| (pData[i] >= 'A' && pData[i] <= 'Z'))
-		{
-			name += pData[i];
-		}
+		return false;
 	}
-	return name;
+
+	fread(&kNpkHeader, sizeof(NPK_Header), 1, fp);
+
+	akNpkIndex.reserve(kNpkHeader.count);
+	for (int i = 0; i < kNpkHeader.count; ++i)
+	{
+		fread(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fp);
+	}
+
+	akImgHeader.reserve(kNpkHeader.count);
+	akImgIndex.reserve(kNpkHeader.count);
+	for (int i = 0; i < kNpkHeader.count; ++i)
+	{
+		for (int j = 0; j < 256; ++j)
+		{
+			akNpkIndex[i].name[j] ^= decord_flag[j];
+		}
+
+		fseek(fp, akNpkIndex[i].offset, SEEK_SET);
+
+		// img file
+		fread(akImgHeader[i].flag, 20, 1, fp);
+		if (strcmp(akImgHeader[i].flag, "Neople Img File") == 0)
+		{
+			fseek(fp, -4, SEEK_CUR);
+			fread(&(akImgHeader[i].index_size), sizeof(int), 1, fp);
+		}
+		else if (strcmp(akImgHeader[i].flag, "Neople Image File") == 0)
+		{
+			akImgHeader[i].index_size = -1;
+		}
+		else
+		{
+			printf("ERROR:imgHeader[i].flag\n");
+			return false;
+		}
+		fread(&(akImgHeader[i].unknown1), sizeof(int), 1, fp);
+		fread(&(akImgHeader[i].version), sizeof(int), 1, fp);
+		if (akImgHeader[i].version != 2 && akImgHeader[i].version != 4 && akImgHeader[i].version != 5 && akImgHeader[i].version != 6)
+		{
+			printf("ERROR:imgHeader[i].version\n");
+			return false;
+		}
+		fread(&(akImgHeader[i].index_count), sizeof(int), 1, fp);
+		if (akImgHeader[i].version == 5)
+		{
+			fread(&(akImgHeader[i].iDDSCount), sizeof(int), 1, fp);
+			fread(&(akImgHeader[i].iTotalLength), sizeof(int), 1, fp);
+		}
+		if (akImgHeader[i].version == 4 || akImgHeader[i].version == 5)
+		{
+			int iColorCount;
+			fread(&iColorCount, sizeof(int), 1, fp);
+			std::vector<unsigned int> aiColor;
+			for (int j = 0; j < iColorCount; ++j)
+			{
+				unsigned int iColor;
+				fread(&iColor, sizeof(int), 1, fp);
+				aiColor.push_back(iColor);
+			}
+			akImgHeader[i].aiPaletteData.push_back(aiColor);
+		}
+		if (akImgHeader[i].version == 6)
+		{
+			int iPaletteCount;
+			fread(&iPaletteCount, sizeof(int), 1, fp);
+			for (int j = 0; j < iPaletteCount; ++j)
+			{
+				int iColorCount;
+				std::vector<unsigned int> aiColor;
+				fread(&iColorCount, sizeof(int), 1, fp);
+				for (int k = 0; k < iColorCount; ++k)
+				{
+					unsigned int iColor;
+					fread(&iColor, sizeof(int), 1, fp);
+					aiColor.push_back(iColor);
+				}
+				akImgHeader[i].aiPaletteData.push_back(aiColor);
+			}
+		}
+		if (akImgHeader[i].version == 5)
+		{
+			unsigned int iDDS;
+			for (int j = 0; j < akImgHeader[i].iDDSCount; ++j)
+			{
+				fread(&iDDS, sizeof(int), 1, fp);
+				fread(&iDDS, sizeof(int), 1, fp);
+				fread(&iDDS, sizeof(int), 1, fp);
+				fread(&iDDS, sizeof(int), 1, fp);
+				fread(&iDDS, sizeof(int), 1, fp);
+				fread(&iDDS, sizeof(int), 1, fp);
+				fread(&iDDS, sizeof(int), 1, fp);
+			}
+		}
+		if (akImgHeader[i].version != 1)
+		{
+			akImgIndex[i].reserve(akImgHeader[i].index_count);
+			for (int j = 0; j < akImgHeader[i].index_count; ++j)
+			{
+				fread(&(akImgIndex[i][j].dwType), sizeof(int), 1, fp);
+				if (akImgIndex[i][j].dwType == LINK)
+				{
+					fread(&(akImgIndex[i][j].iLinkNum), sizeof(int), 1, fp);
+				}
+				else if (akImgIndex[i][j].dwType < LINK)
+				{
+					fread(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].width), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].height), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].size), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].key_x), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].key_y), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].max_width), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].max_height), sizeof(int), 1, fp);
+				}
+				else
+				{
+					fread(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].width), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].height), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].size), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].key_x), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].key_y), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].max_width), sizeof(int), 1, fp);
+					fread(&(akImgIndex[i][j].max_height), sizeof(int), 1, fp);
+					unsigned int iData;
+					fread(&iData, sizeof(int), 1, fp);
+					fread(&iData, sizeof(int), 1, fp);
+					fread(&iData, sizeof(int), 1, fp);
+					fread(&iData, sizeof(int), 1, fp);
+					fread(&iData, sizeof(int), 1, fp);
+					fread(&iData, sizeof(int), 1, fp);
+					fread(&iData, sizeof(int), 1, fp);
+				}
+
+			}
+		}
+
+		///////////////
+	}
+	fclose(fp);
+	return true;
+}
+
+void SplitStr(const std::string& rkStr, const std::string& rkSep, std::vector<std::string>& rkResult)
+{
+	if (rkStr.empty())
+	{
+		return;
+	}
+
+	rkResult.clear();
+
+	size_t uiStart = 0;
+	size_t uiPos = 0;
+	do
+	{
+		uiPos = rkStr.find_first_of(rkSep, uiStart);
+		if (uiPos == uiStart)
+		{
+			uiStart = uiPos + 1;
+		}
+		else if (uiPos == std::string::npos)
+		{
+			rkResult.push_back(rkStr.substr(uiStart));
+			break;
+		}
+		else
+		{
+			rkResult.push_back(rkStr.substr(uiStart, uiPos - uiStart));
+			uiStart = uiPos + 1;
+		}
+		uiStart = rkStr.find_first_not_of(rkSep, uiStart);
+	} while (uiPos != std::string::npos);
+}
+
+void GetFiles(std::string path, std::vector<std::string>& filePaths, std::vector<std::string>& fileNames)
+{
+	//文件句柄  
+	long   hFile = 0;
+	//文件信息  
+	struct _finddata_t fileinfo;
+	std::string p;
+	if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
+	{
+		do
+		{
+			//如果是目录,迭代之  
+			//如果不是,加入列表  
+			if ((fileinfo.attrib &  _A_SUBDIR))
+			{
+				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+					GetFiles(p.assign(path).append("\\").append(fileinfo.name), filePaths, fileNames);
+			}
+			else
+			{
+				filePaths.push_back(p.assign(path).append("\\").append(fileinfo.name));
+				fileNames.push_back(fileinfo.name);
+			}
+		} while (_findnext(hFile, &fileinfo) == 0);
+		_findclose(hFile);
+	}
+}
+
+void OutPutAutoConfig(starsImgType eType)
+{
+	std::map<std::string, std::map<std::string, int>> akImgType;
+
+	std::string kFilePreName = "";
+	std::string kFileEndName = "";
+	std::string kFileEndName1 = "";
+	switch (eType)
+	{
+	case SIMG_NONE:
+		return;
+		break;
+	case SIMG_MONSTER:
+		kFilePreName = "sprite_monster";
+		break;
+	case SIMG_OBJECT:
+	case SIMG_BLOCK:
+		kFilePreName = "sprite_map";
+		kFileEndName = "obj.NPK";
+		kFileEndName1 = "object.NPK";
+		break;
+	case SIMG_PATHGATE:
+		kFilePreName = "sprite_map";
+		kFileEndName = "gate.NPK";
+		kFileEndName1 = "pathgate.NPK";
+		break;
+	case SIMG_ITEM:
+		return;
+		break;
+	default:
+		break;
+	}
+
+	NPK_Header kNpkHeader;
+	std::vector<NPK_Index> akNpkIndex;
+	std::vector<NImgF_Header> akImgHeader;
+	std::vector<std::vector<NImgF_Index>> akImgIndex;
+
+	std::vector<std::string> akPicturePath;
+	std::vector<std::string> akPictureName;
+	GetFiles(GAME_IMG_PATH, akPicturePath, akPictureName);
+
+	for (int i = 0; i < akPictureName.size(); ++i)
+	{
+		std::string& kPictureName = akPictureName[i];
+		if (kPictureName[0] != 's') continue;
+		if (kPictureName.find(kFilePreName) != 0) continue;
+		if (kPictureName.find(kFileEndName) != kPictureName.size() - kFileEndName.size() && kPictureName.find(kFileEndName1) != kPictureName.size() - kFileEndName1.size()) continue;
+
+		akNpkIndex.clear();
+		akImgHeader.clear();
+		akImgIndex.clear();
+		ReadNPKFile(akPicturePath[i], kNpkHeader, akNpkIndex, akImgHeader, akImgIndex);
+
+		std::string kAutoConfitPath = "./FileConfig/Auto/";
+		kAutoConfitPath += kPictureName.substr(0, kPictureName.size() - 4);
+		kAutoConfitPath += ".txt";
+		FILE *fp = fopen(kAutoConfitPath.c_str(), "w+");
+		if (!fp)
+		{
+			printf("fopen->kAutoConfitPath Faild!");
+			return;
+		}
+
+		for (int j = 0; j < akNpkIndex.size(); ++j)
+		{
+			bool fPass = false;
+			std::string kImgName = akNpkIndex[j].name;
+			if (eType == SIMG_MONSTER)
+			{
+				kImgName  += "|SIMG_MONSTER";
+				fputs(kImgName.c_str(), fp);
+				fPass = true;
+			}
+			else if (eType == SIMG_OBJECT || eType == SIMG_BLOCK)
+			{
+				if (j + 1 < akNpkIndex.size())
+				{
+					std::string kImgNameTemp = kImgName;
+					kImgNameTemp.insert(kImgNameTemp.size() - 4, "_particle");
+					std::string kImgNameNext = akNpkIndex[j + 1].name;
+					if (kImgNameTemp == kImgNameNext)
+					{
+						kImgName += "|SIMG_OBJECT";
+						fputs(kImgName.c_str(), fp);
+						fPass = true;
+					}
+				}
+			}
+			else if (eType == SIMG_PATHGATE)
+			{
+
+			}
+			else if (eType == SIMG_ITEM)
+			{
+
+			}
+			
+			if (!fPass)
+			{
+				kImgName += "|SIMG_NONE";
+				fputs(kImgName.c_str(), fp);
+			}
+		}
+		fclose(fp);
+	}
+}
+
+void OutPutCombineConfig()
+{
+	char kStr[256];
+	std::vector<std::string> akSplitStr;
+
+	std::map<std::string, std::map<std::string, std::string>> akImgComfig;
+	std::vector<std::string> akPicturePathAuto;
+	std::vector<std::string> akPictureNameAuto;
+	GetFiles("./FileConfig/Auto/", akPicturePathAuto, akPictureNameAuto);
+	for (int i = 0; i < akPicturePathAuto.size(); ++i)
+	{
+		FILE *fp = fopen(akPicturePathAuto[i].c_str(), "r+");
+		if (!fp)
+		{
+			printf("fopen->akPicturePathAuto Faild!");
+			return;
+		}
+		while (fgets(kStr, 256, fp) != NULL)
+		{
+			SplitStr(kStr, "|", akSplitStr);
+			if (akSplitStr.size() == 2)
+			{
+				akImgComfig[akPictureNameAuto[i]][akSplitStr[0]] = akSplitStr[1];
+			}
+		}
+		fclose(fp);
+	}
+
+	std::vector<std::string> akPicturePathManual;
+	std::vector<std::string> akPictureNameManual;
+	GetFiles("./FileConfig/Manual/", akPicturePathManual, akPictureNameManual);
+	for (int i = 0; i < akPicturePathManual.size(); ++i)
+	{
+		FILE *fp = fopen(akPicturePathManual[i].c_str(), "r+");
+		if (!fp)
+		{
+			printf("fopen->akPicturePathManual Faild!");
+			return;
+		}
+		while (fgets(kStr, 256, fp) != NULL)
+		{
+			SplitStr(kStr, "|", akSplitStr);
+			if (akSplitStr.size() == 2)
+			{
+				akImgComfig[akPictureNameManual[i]][akSplitStr[0]] = akSplitStr[1];
+			}
+		}
+		fclose(fp);
+	}
+
+	std::map<std::string, std::map<std::string, std::string>>::iterator itr = akImgComfig.begin();
+	for (; itr != akImgComfig.end(); itr++)
+	{
+		std::string kFileName = "./FileConfig/Combine/";
+		kFileName += itr->first;
+		FILE *fp = fopen(kFileName.c_str(), "w+");
+		if (!fp)
+		{
+			printf("fopen->Combine Faild!");
+			return;
+		}
+
+		std::map<std::string, std::string>::iterator itrSub = itr->second.begin();
+		for (; itrSub != itr->second.end(); itrSub++)
+		{
+			std::string kResult = itrSub->first;
+			kResult += "|";
+			kResult += itrSub->second;
+			fputs(kResult.c_str(), fp);
+		}
+
+		fclose(fp);
+	}
+}
+
+void ExportNPKFiles()
+{
+	char kStr[256];
+	std::vector<std::string> akSplitStr;
+
+	std::map<std::string, std::map<std::string, std::string>> akImgComfig;
+	std::vector<std::string> akPicturePathCombine;
+	std::vector<std::string> akPictureNameCombine;
+	GetFiles("./FileConfig/Combine/", akPicturePathCombine, akPictureNameCombine);
+	for (int i = 0; i < akPicturePathCombine.size(); ++i)
+	{
+		FILE *fp = fopen(akPicturePathCombine[i].c_str(), "r+");
+		if (!fp)
+		{
+			printf("fopen->akPicturePathAuto Faild!");
+			return;
+		}
+		while (fgets(kStr, 256, fp) != NULL)
+		{
+			SplitStr(kStr, "|", akSplitStr);
+			if (akSplitStr.size() == 2)
+			{
+				akImgComfig[akPictureNameCombine[i]][akSplitStr[0]] = akSplitStr[1];
+			}
+		}
+		fclose(fp);
+	}
+
+	NPK_Header kNpkHeader;
+	std::vector<NPK_Index> akNpkIndex;
+	std::vector<NImgF_Header> akImgHeader;
+	std::vector<std::vector<NImgF_Index>> akImgIndex;
+	std::map<std::string, std::map<std::string, std::string>>::iterator itr = akImgComfig.begin();
+	unsigned int iColorTemp[1920 * 1080];
+	for (; itr != akImgComfig.end(); itr++)
+	{
+		std::string kName = GAME_IMG_PATH;
+		kName += itr->first.substr(0, itr->first.size() - 4);
+		kName += ".NPK";
+
+		akNpkIndex.clear();
+		akImgHeader.clear();
+		akImgIndex.clear();
+		ReadNPKFile(kName, kNpkHeader, akNpkIndex, akImgHeader, akImgIndex);
+
+		kName = "./FileExport/";
+		kName += itr->first.substr(0, itr->first.size() - 4);
+		kName += ".NPK";
+
+		FILE *fpMy = fopen(kName.c_str(), "w+");
+		if (!fpMy)
+		{
+			printf("FileExport Faild!");
+			return;
+		}
+		fclose(fpMy);
+
+		fpMy = fopen(kName.c_str(), "wb");
+		if (!fpMy)
+		{
+			printf("FileExport Faild!");
+			return;
+		}
+		// 计算文件大小
+		int iSizeOffset = 0;
+		iSizeOffset += sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count;
+		for (int i = 0; i < kNpkHeader.count; ++i)
+		{
+			int iSizeCount = 0;
+			iSizeCount += 4 * 8;
+			for (int j = 0; j < akImgHeader[i].index_count; ++j)
+			{
+				iSizeCount += 4 * 9;
+				iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+			}
+
+			akNpkIndex[i].size = iSizeCount;
+			akNpkIndex[i].offset = iSizeOffset;
+			for (int j = 0; j < 256; ++j)
+			{
+				akNpkIndex[i].name[j] ^= decord_flag[j];
+			}
+
+			iSizeOffset += iSizeCount;
+		}
+
+		fwrite(&kNpkHeader, sizeof(NPK_Header), 1, fpMy);
+		for (int i = 0; i < kNpkHeader.count; ++i)
+		{
+			fwrite(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fpMy);
+		}
+		
+		for (int i = 0; i < kNpkHeader.count; ++i)
+		{
+			fwrite("Neople Img File", 16, 1, fpMy);
+			fwrite(&(akImgHeader[i].index_size), sizeof(int), 1, fpMy);
+			fwrite(&(akImgHeader[i].unknown1), sizeof(int), 1, fpMy);
+			akImgHeader[i].version = 2;
+			fwrite(&(akImgHeader[i].version), sizeof(int), 1, fpMy);
+			fwrite(&(akImgHeader[i].index_count), sizeof(int), 1, fpMy);
+			int iAllPixlCount = 0;
+			for (int j = 0; j < akImgHeader[i].index_count; ++j)
+			{
+				akImgIndex[i][j].dwType = ARGB8888;
+				fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
+				akImgIndex[i][j].dwCompress = COMP_NONE;
+				fwrite(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].width), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].height), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].size), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].key_x), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].key_y), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
+				iAllPixlCount += akImgIndex[i][j].width * akImgIndex[i][j].height;
+			}
+			fwrite(iColorTemp, sizeof(int), iAllPixlCount, fpMy);
+		}
+		fclose(fpMy);
+	}
 }
 
 int main()
@@ -92,221 +597,237 @@ int main()
 		}
 	}
 
-	FILE *fp = fopen("test1 (1).NPK", "rb");
-	if (!fp)
-	{
-		return 0;
-	}
-	unsigned int nFileLen = 0;
-	fseek(fp, 0, SEEK_END); //定位到文件末
-	nFileLen = ftell(fp); //文件长度 
+	//FILE *fp = fopen("test1 (1).NPK", "rb");
+	//if (!fp)
+	//{
+	//	return 0;
+	//}
+	//unsigned int nFileLen = 0;
+	//fseek(fp, 0, SEEK_END); //定位到文件末
+	//nFileLen = ftell(fp); //文件长度 
 
-	fseek(fp, 0, SEEK_SET);
+	//fseek(fp, 0, SEEK_SET);
 
-	NPK_Header npkHeader;
-	fread(&npkHeader, sizeof(NPK_Header), 1, fp);
+	//NPK_Header npkHeader;
+	//fread(&npkHeader, sizeof(NPK_Header), 1, fp);
 
-	NPK_Index* npkIndex = new NPK_Index[npkHeader.count];
-	fread(npkIndex, sizeof(NPK_Index), npkHeader.count, fp);
-	NImgF_Header* imgHeader = new NImgF_Header[npkHeader.count];
-	std::vector<NImgF_Index*> akImgIndex;
-	for (int i = 0; i < npkHeader.count; ++i)
-	{
-		for (int j = 0; j < 256; ++j)
-		{
-			npkIndex[i].name[j] ^= decord_flag[j];
-		}
+	//NPK_Index* npkIndex = new NPK_Index[npkHeader.count];
+	//fread(npkIndex, sizeof(NPK_Index), npkHeader.count, fp);
+	//NImgF_Header* imgHeader = new NImgF_Header[npkHeader.count];
+	//std::vector<NImgF_Index*> akImgIndex;
+	//for (int i = 0; i < npkHeader.count; ++i)
+	//{
+	//	for (int j = 0; j < 256; ++j)
+	//	{
+	//		npkIndex[i].name[j] ^= decord_flag[j];
+	//	}
 
-		fseek(fp, npkIndex[i].offset, SEEK_SET);
+	//	fseek(fp, npkIndex[i].offset, SEEK_SET);
 
-		// img file
-		fread(imgHeader[i].flag, 20, 1, fp);
-		if (strcmp(imgHeader[i].flag, "Neople Img File") == 0)
-		{
-			fseek(fp, -4, SEEK_CUR);
-			fread(&(imgHeader[i].index_size), sizeof(int), 1, fp);
-		}
-		else if (strcmp(imgHeader[i].flag, "Neople Image File") == 0)
-		{
-			imgHeader[i].index_size = -1;
-		}
-		else
-		{
-			printf("ERROR:imgHeader[i].flag\n");
-		}
-		fread(&(imgHeader[i].unknown1), sizeof(int), 1, fp);
-		fread(&(imgHeader[i].version), sizeof(int), 1, fp);
-		if (imgHeader[i].version != 2 && imgHeader[i].version != 4 && imgHeader[i].version != 5 && imgHeader[i].version != 6)
-		{
-			printf("ERROR:imgHeader[i].version\n");
-		}
-		fread(&(imgHeader[i].index_count), sizeof(int), 1, fp);
-		if (imgHeader[i].version == 5)
-		{
-			fread(&(imgHeader[i].iDDSCount), sizeof(int), 1, fp);
-			fread(&(imgHeader[i].iTotalLength), sizeof(int), 1, fp);
-		}
-		if (imgHeader[i].version == 4 || imgHeader[i].version == 5)
-		{
-			int iColorCount;
-			fread(&iColorCount, sizeof(int), 1, fp);
-			std::vector<unsigned int> aiColor;
-			for (int j = 0; j < iColorCount; ++j)
-			{
-				unsigned int iColor;
-				fread(&iColor, sizeof(int), 1, fp);
-				aiColor.push_back(iColor);
-			}
-			imgHeader[i].aiPaletteData.push_back(aiColor);
-		}
-		if (imgHeader[i].version == 6)
-		{
-			int iPaletteCount;
-			fread(&iPaletteCount, sizeof(int), 1, fp);
-			for (int j = 0; j < iPaletteCount; ++j)
-			{
-				int iColorCount;
-				std::vector<unsigned int> aiColor;
-				fread(&iColorCount, sizeof(int), 1, fp);
-				for (int k = 0; k < iColorCount; ++k)
-				{
-					unsigned int iColor;
-					fread(&iColor, sizeof(int), 1, fp);
-					aiColor.push_back(iColor);
-				}
-				imgHeader[i].aiPaletteData.push_back(aiColor);
-			}
-		}
-		if (imgHeader[i].version == 5)
-		{
-			unsigned int iDDS;
-			for (int j = 0; j < imgHeader[i].iDDSCount; ++j)
-			{
-				fread(&iDDS, sizeof(int), 1, fp);
-				fread(&iDDS, sizeof(int), 1, fp);
-				fread(&iDDS, sizeof(int), 1, fp);
-				fread(&iDDS, sizeof(int), 1, fp);
-				fread(&iDDS, sizeof(int), 1, fp);
-				fread(&iDDS, sizeof(int), 1, fp);
-				fread(&iDDS, sizeof(int), 1, fp);
-			}
-		}
-		if (imgHeader[i].version != 1)
-		{
-			NImgF_Index* imgIndex = new NImgF_Index[imgHeader[i].index_count];
-			for (int j = 0; j < imgHeader[i].index_count; ++j)
-			{
-				fread(&(imgIndex[j].dwType), sizeof(int), 1, fp);
-				if (imgIndex[j].dwType == LINK)
-				{
-					fread(&(imgIndex[j].iLinkNum), sizeof(int), 1, fp);
-				}
-				else if (imgIndex[j].dwType < LINK)
-				{
-					fread(&(imgIndex[j].dwCompress), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].width), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].height), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].size), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].key_x), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].key_y), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].max_width), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].max_height), sizeof(int), 1, fp);
-				}
-				else
-				{
-					fread(&(imgIndex[j].dwCompress), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].width), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].height), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].size), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].key_x), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].key_y), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].max_width), sizeof(int), 1, fp);
-					fread(&(imgIndex[j].max_height), sizeof(int), 1, fp);
-					unsigned int iData;
-					fread(&iData, sizeof(int), 1, fp);
-					fread(&iData, sizeof(int), 1, fp);
-					fread(&iData, sizeof(int), 1, fp);
-					fread(&iData, sizeof(int), 1, fp);
-					fread(&iData, sizeof(int), 1, fp);
-					fread(&iData, sizeof(int), 1, fp);
-					fread(&iData, sizeof(int), 1, fp);
-				}
+	//	// img file
+	//	fread(imgHeader[i].flag, 20, 1, fp);
+	//	if (strcmp(imgHeader[i].flag, "Neople Img File") == 0)
+	//	{
+	//		fseek(fp, -4, SEEK_CUR);
+	//		fread(&(imgHeader[i].index_size), sizeof(int), 1, fp);
+	//	}
+	//	else if (strcmp(imgHeader[i].flag, "Neople Image File") == 0)
+	//	{
+	//		imgHeader[i].index_size = -1;
+	//	}
+	//	else
+	//	{
+	//		printf("ERROR:imgHeader[i].flag\n");
+	//	}
+	//	fread(&(imgHeader[i].unknown1), sizeof(int), 1, fp);
+	//	fread(&(imgHeader[i].version), sizeof(int), 1, fp);
+	//	if (imgHeader[i].version != 2 && imgHeader[i].version != 4 && imgHeader[i].version != 5 && imgHeader[i].version != 6)
+	//	{
+	//		printf("ERROR:imgHeader[i].version\n");
+	//	}
+	//	fread(&(imgHeader[i].index_count), sizeof(int), 1, fp);
+	//	if (imgHeader[i].version == 5)
+	//	{
+	//		fread(&(imgHeader[i].iDDSCount), sizeof(int), 1, fp);
+	//		fread(&(imgHeader[i].iTotalLength), sizeof(int), 1, fp);
+	//	}
+	//	if (imgHeader[i].version == 4 || imgHeader[i].version == 5)
+	//	{
+	//		int iColorCount;
+	//		fread(&iColorCount, sizeof(int), 1, fp);
+	//		std::vector<unsigned int> aiColor;
+	//		for (int j = 0; j < iColorCount; ++j)
+	//		{
+	//			unsigned int iColor;
+	//			fread(&iColor, sizeof(int), 1, fp);
+	//			aiColor.push_back(iColor);
+	//		}
+	//		imgHeader[i].aiPaletteData.push_back(aiColor);
+	//	}
+	//	if (imgHeader[i].version == 6)
+	//	{
+	//		int iPaletteCount;
+	//		fread(&iPaletteCount, sizeof(int), 1, fp);
+	//		for (int j = 0; j < iPaletteCount; ++j)
+	//		{
+	//			int iColorCount;
+	//			std::vector<unsigned int> aiColor;
+	//			fread(&iColorCount, sizeof(int), 1, fp);
+	//			for (int k = 0; k < iColorCount; ++k)
+	//			{
+	//				unsigned int iColor;
+	//				fread(&iColor, sizeof(int), 1, fp);
+	//				aiColor.push_back(iColor);
+	//			}
+	//			imgHeader[i].aiPaletteData.push_back(aiColor);
+	//		}
+	//	}
+	//	if (imgHeader[i].version == 5)
+	//	{
+	//		unsigned int iDDS;
+	//		for (int j = 0; j < imgHeader[i].iDDSCount; ++j)
+	//		{
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//			fread(&iDDS, sizeof(int), 1, fp);
+	//		}
+	//	}
+	//	if (imgHeader[i].version != 1)
+	//	{
+	//		NImgF_Index* imgIndex = new NImgF_Index[imgHeader[i].index_count];
+	//		for (int j = 0; j < imgHeader[i].index_count; ++j)
+	//		{
+	//			fread(&(imgIndex[j].dwType), sizeof(int), 1, fp);
+	//			if (imgIndex[j].dwType == LINK)
+	//			{
+	//				fread(&(imgIndex[j].iLinkNum), sizeof(int), 1, fp);
+	//			}
+	//			else if (imgIndex[j].dwType < LINK)
+	//			{
+	//				fread(&(imgIndex[j].dwCompress), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].width), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].height), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].size), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].key_x), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].key_y), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].max_width), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].max_height), sizeof(int), 1, fp);
+	//			}
+	//			else
+	//			{
+	//				fread(&(imgIndex[j].dwCompress), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].width), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].height), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].size), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].key_x), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].key_y), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].max_width), sizeof(int), 1, fp);
+	//				fread(&(imgIndex[j].max_height), sizeof(int), 1, fp);
+	//				unsigned int iData;
+	//				fread(&iData, sizeof(int), 1, fp);
+	//				fread(&iData, sizeof(int), 1, fp);
+	//				fread(&iData, sizeof(int), 1, fp);
+	//				fread(&iData, sizeof(int), 1, fp);
+	//				fread(&iData, sizeof(int), 1, fp);
+	//				fread(&iData, sizeof(int), 1, fp);
+	//				fread(&iData, sizeof(int), 1, fp);
+	//			}
 
-			}
-			akImgIndex.push_back(imgIndex);
-		}
+	//		}
+	//		akImgIndex.push_back(imgIndex);
+	//	}
+	//
+	//	///////////////
+	//}
+	//fclose(fp);
+
+	//FILE *fpMy = fopen("atest1 (1).NPK", "wb");
+	//if (!fpMy)
+	//{
+	//	return 0;
+	//}
+
+	//// 计算文件大小
+	//int iSizeOffset = 0;
+	//iSizeOffset += sizeof(NPK_Header) + sizeof(NPK_Index) * npkHeader.count;
+	//for (int i = 0; i < npkHeader.count; ++i)
+	//{
+	//	int iSizeCount = 0;
+	//	iSizeCount += 4 * 8;
+	//	for (int j = 0; j < imgHeader[i].index_count; ++j)
+	//	{
+	//		iSizeCount += 4 * 9;
+	//		iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+	//	}
+
+	//	npkIndex[i].size = iSizeCount;
+	//	npkIndex[i].offset = iSizeOffset;
+	//	for (int j = 0; j < 256; ++j)
+	//	{
+	//		npkIndex[i].name[j] ^= decord_flag[j];
+	//	}
+
+	//	iSizeOffset += iSizeCount;
+	//}
+
+	//unsigned int* iColorTemp = new unsigned int[1920 * 1080];
+	//for (int i = 0; i < 1080; ++i)
+	//{
+	//	for (int j = 0; j < 1920; ++j)
+	//	{
+	//		iColorTemp[i * 1920 + j] = 0xFFFF00FF;
+	//	}
+	//}
+	//fwrite(&npkHeader, sizeof(NPK_Header), 1, fpMy);
+	//fwrite(npkIndex, sizeof(NPK_Index), npkHeader.count, fpMy);
+	//for (int i = 0; i < npkHeader.count; ++i)
+	//{
+	//	fwrite("Neople Img File", 16, 1, fpMy);
+	//	fwrite(&(imgHeader[i].index_size), sizeof(int), 1, fpMy);
+	//	fwrite(&(imgHeader[i].unknown1), sizeof(int), 1, fpMy);
+	//	imgHeader[i].version = 2;
+	//	fwrite(&(imgHeader[i].version), sizeof(int), 1, fpMy);
+	//	fwrite(&(imgHeader[i].index_count), sizeof(int), 1, fpMy);
+	//	int iAllPixlCount = 0;
+	//	for (int j = 0; j < imgHeader[i].index_count; ++j)
+	//	{
+	//		akImgIndex[i][j].dwType = ARGB8888;
+	//		fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
+	//		akImgIndex[i][j].dwCompress = COMP_NONE;
+	//		fwrite(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].width), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].height), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].size), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].key_x), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].key_y), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
+	//		fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
+	//		iAllPixlCount += akImgIndex[i][j].width * akImgIndex[i][j].height;
+	//	}
+	//	fwrite(iColorTemp, sizeof(int), iAllPixlCount, fpMy);
+	//}
+	//fclose(fpMy);
 	
-		///////////////
-	}
-	fclose(fp);
-
-	FILE *fpMy = fopen("atest1 (1).NPK", "wb");
-	if (!fpMy)
+	printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n");
+	char a;
+	while (a = getchar())
 	{
-		return 0;
-	}
-
-	// 计算文件大小
-	int iSizeOffset = 0;
-	iSizeOffset += sizeof(NPK_Header) + sizeof(NPK_Index) * npkHeader.count;
-	for (int i = 0; i < npkHeader.count; ++i)
-	{
-		int iSizeCount = 0;
-		iSizeCount += 4 * 8;
-		for (int j = 0; j < imgHeader[i].index_count; ++j)
+		if (a == '1')
 		{
-			iSizeCount += 4 * 9;
-			iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+			a = '1';
 		}
-
-		npkIndex[i].size = iSizeCount;
-		npkIndex[i].offset = iSizeOffset;
-		for (int j = 0; j < 256; ++j)
+		else if (a == '2')
 		{
-			npkIndex[i].name[j] ^= decord_flag[j];
+
 		}
-
-		iSizeOffset += iSizeCount;
-	}
-
-	unsigned int* iColorTemp = new unsigned int[1920 * 1080];
-	for (int i = 0; i < 1080; ++i)
-	{
-		for (int j = 0; j < 1920; ++j)
+		else if (a == '3')
 		{
-			iColorTemp[i * 1920 + j] = 0xFFFF00FF;
+
 		}
 	}
-	fwrite(&npkHeader, sizeof(NPK_Header), 1, fpMy);
-	fwrite(npkIndex, sizeof(NPK_Index), npkHeader.count, fpMy);
-	for (int i = 0; i < npkHeader.count; ++i)
-	{
-		fwrite("Neople Img File", 16, 1, fpMy);
-		fwrite(&(imgHeader[i].index_size), sizeof(int), 1, fpMy);
-		fwrite(&(imgHeader[i].unknown1), sizeof(int), 1, fpMy);
-		imgHeader[i].version = 2;
-		fwrite(&(imgHeader[i].version), sizeof(int), 1, fpMy);
-		fwrite(&(imgHeader[i].index_count), sizeof(int), 1, fpMy);
-		int iAllPixlCount = 0;
-		for (int j = 0; j < imgHeader[i].index_count; ++j)
-		{
-			akImgIndex[i][j].dwType = ARGB8888;
-			fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
-			akImgIndex[i][j].dwCompress = COMP_NONE;
-			fwrite(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].width), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].height), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].size), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].key_x), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].key_y), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
-			fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
-			iAllPixlCount += akImgIndex[i][j].width * akImgIndex[i][j].height;
-		}
-		fwrite(iColorTemp, sizeof(int), iAllPixlCount, fpMy);
-	}
-	fclose(fpMy);
-
-	getchar();
 	return 0;
 }
