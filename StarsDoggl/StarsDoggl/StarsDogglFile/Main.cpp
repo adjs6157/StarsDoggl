@@ -5,12 +5,13 @@
 #include <direct.h>
 #include <vector>
 #include <map>
+#include "sha256.h"
 
 enum compressType{ COMP_NONE = 5, COMP_ZLIB = 6, COMP_ZLIB2 = 7, COMP_UDEF = 0 };
 enum colorFormat{ ARGB8888 = 0x10, ARGB4444 = 0x0F, ARGB1555 = 0x0E, LINK = 0x11, DDS_DXT1 = 0x12, DDS_DXT3 = 0x13, DDS_DXT5 = 0x14, COLOR_UDEF = 0, V4_FMT, RGB565 };
 enum starsImgType{ SIMG_NONE = 0, SIMG_MONSTER = 1, SIMG_OBJECT = 2, SIMG_BLOCK = 3, SIMG_PATHGATE = 4, SIMG_ITEM = 5 };
-enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00, SCOLOR_ITEM = 0xFF00FF00 };
-#define GAME_IMG_PATH "E:\\Game\\腾讯游戏\\地下城与勇士\\ImagePacks2\\"
+enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00, SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFF640096, SCOLOR_MONSTERICON = 0xFFC8C800};
+#define GAME_IMG_PATH "./NPKBack/"
 
 struct NPK_Header
 {
@@ -53,7 +54,7 @@ struct NImgF_Index
 	int iLinkNum;
 };
 
-bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index>& akNpkIndex, std::vector<NImgF_Header>& akImgHeader, std::vector<std::vector<NImgF_Index>>& akImgIndex)
+bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index>& akNpkIndex, unsigned char* dataSHA, std::vector<NImgF_Header>& akImgHeader, std::vector<std::vector<NImgF_Index>>& akImgIndex)
 {
 	FILE *fp = fopen(path.c_str(), "rb");
 	if (!fp)
@@ -69,6 +70,8 @@ bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index
 	{
 		fread(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fp);
 	}
+
+	fread(dataSHA, 32, 1, fp);
 
 	akImgHeader.resize(kNpkHeader.count);
 	akImgIndex.resize(kNpkHeader.count);
@@ -312,6 +315,7 @@ void OutPutAutoConfig(starsImgType eType)
 
 	NPK_Header kNpkHeader;
 	std::vector<NPK_Index> akNpkIndex;
+	unsigned char dataSHA[32];
 	std::vector<NImgF_Header> akImgHeader;
 	std::vector<std::vector<NImgF_Index>> akImgIndex;
 
@@ -323,12 +327,16 @@ void OutPutAutoConfig(starsImgType eType)
 	{
 		printf("%d/%d\n", i, akPictureName.size());
 		std::string& kPictureName = akPictureName[i];
-		if (!CheckNPKNameType(kPictureName, eType)) continue;
+		if (SIMG_NONE != eType)
+		{
+			if (!CheckNPKNameType(kPictureName, eType)) continue;
+		}
+		
 
 		akNpkIndex.clear();
 		akImgHeader.clear();
 		akImgIndex.clear();
-		ReadNPKFile(akPicturePath[i], kNpkHeader, akNpkIndex, akImgHeader, akImgIndex);
+		ReadNPKFile(akPicturePath[i], kNpkHeader, akNpkIndex, dataSHA, akImgHeader, akImgIndex);
 
 		std::string kAutoConfitPath = "./FileConfig/Auto/";
 		kAutoConfitPath += kPictureName.substr(0, kPictureName.size() - 4);
@@ -392,7 +400,7 @@ void OutPutCombineConfig()
 	std::vector<std::string> akSplitStr;
 
 	std::map<std::string, std::map<std::string, std::string>> akImgComfig;
-	std::vector<std::string> akPicturePathAuto;
+	/*std::vector<std::string> akPicturePathAuto;
 	std::vector<std::string> akPictureNameAuto;
 	GetFiles("./FileConfig/Auto/", akPicturePathAuto, akPictureNameAuto);
 	for (int i = 0; i < akPicturePathAuto.size(); ++i)
@@ -413,7 +421,7 @@ void OutPutCombineConfig()
 			}
 		}
 		fclose(fp);
-	}
+	}*/
 	printf("%d/%d\n", 1, 3);
 	std::vector<std::string> akPicturePathManual;
 	std::vector<std::string> akPictureNameManual;
@@ -490,7 +498,7 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 			SplitStr(kStr, "|", akSplitStr);
 			if (akSplitStr.size() == 2)
 			{
-				akSplitStr[1].erase(akSplitStr.size() - 1);
+				akSplitStr[1].erase(akSplitStr[1].length() - 1);
 				akImgComfig[akPictureNameCombine[i]][akSplitStr[0]] = akSplitStr[1];
 			}
 		}
@@ -500,10 +508,11 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 
 	NPK_Header kNpkHeader;
 	std::vector<NPK_Index> akNpkIndex;
+	unsigned char dataSHA[32];
 	std::vector<NImgF_Header> akImgHeader;
 	std::vector<std::vector<NImgF_Index>> akImgIndex;
 	std::map<std::string, std::map<std::string, std::string>>::iterator itr = akImgComfig.begin();
-	unsigned int iColorTemp[1920 * 1080];
+	unsigned int iColorTemp[3500 * 3500];
 	int iCurNpkCount = 0;
 	for (; itr != akImgComfig.end(); itr++)
 	{
@@ -516,7 +525,7 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 		akNpkIndex.clear();
 		akImgHeader.clear();
 		akImgIndex.clear();
-		ReadNPKFile(kName, kNpkHeader, akNpkIndex, akImgHeader, akImgIndex);
+		ReadNPKFile(kName, kNpkHeader, akNpkIndex, dataSHA, akImgHeader, akImgIndex);
 
 		kName = "./FileExport/";
 		kName += "a";
@@ -540,20 +549,24 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 		// 计算文件大小
 		std::vector<std::string> akNameUncompress;
 		int iSizeOffset = 0;
-		iSizeOffset += sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count;
+		iSizeOffset += sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count+32;
 		for (int i = 0; i < kNpkHeader.count; ++i)
 		{
 			int iSizeCount = 0;
 			iSizeCount += 4 * 8;
+			akImgHeader[i].index_size = 0;
 			for (int j = 0; j < akImgHeader[i].index_count; ++j)
 			{
 				if (j == 0)
 				{
+					akImgHeader[i].index_size += 4 * 9;
 					iSizeCount += 4 * 9;
 					iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+					akImgIndex[i][j].size = akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
 				}
 				else
 				{
+					akImgHeader[i].index_size += 4 * 2;
 					iSizeCount += 4 * 2;
 				}
 			}
@@ -569,11 +582,28 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 			iSizeOffset += iSizeCount;
 		}
 
-		fwrite(&kNpkHeader, sizeof(NPK_Header), 1, fpMy);
+		const int iTempBuffSize = sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count;
+		char* kTempBuff = new char[iTempBuffSize];
+		int iTempBuffIndex = 0;
+
+		//fwrite(&kNpkHeader, sizeof(NPK_Header), 1, fpMy);
+		memcpy(kTempBuff + iTempBuffIndex, &kNpkHeader, sizeof(NPK_Header));
+		iTempBuffIndex += sizeof(NPK_Header);
 		for (int i = 0; i < kNpkHeader.count; ++i)
 		{
-			fwrite(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fpMy);
+			//fwrite(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fpMy);
+			memcpy(kTempBuff + iTempBuffIndex, &(akNpkIndex[i]), sizeof(NPK_Index));
+			iTempBuffIndex += sizeof(NPK_Index);
 		}
+		
+		int len = iTempBuffSize / 17 * 17;
+		KoishiSHA256::SHA256 sha;
+		sha.reset();
+		sha.add(kTempBuff, len);
+		sha.getHash(dataSHA);
+
+		fwrite(kTempBuff, iTempBuffSize, 1, fpMy);
+		fwrite(dataSHA, 32, 1, fpMy);
 		
 		for (int i = 0; i < kNpkHeader.count; ++i)
 		{
@@ -692,7 +722,7 @@ int main()
 		}
 	}
 
-	//FILE *fp = fopen("test1 (1).NPK", "rb");
+	//FILE *fp = fopen("test1 (2).NPK", "rb");
 	//if (!fp)
 	//{
 	//	return 0;
@@ -923,7 +953,7 @@ int main()
 			{
 				printf("ExportNPKFiles\n");
 			}
-			printf("1:SIMG_MONSTER\n2:SIMG_OBJECT\n3:SIMG_BLOCK\n4:SIMG_PATHGATE\n5:SIMG_ITEM\n");
+			printf("0:SIMG_NONE\n1:SIMG_MONSTER\n2:SIMG_OBJECT\n3:SIMG_BLOCK\n4:SIMG_PATHGATE\n5:SIMG_ITEM\n");
 			char b = getchar();
 			getchar();
 			if (a == '1')
@@ -933,7 +963,7 @@ int main()
 			}
 			else
 			{
-				ExportNPKFiles(SIMG_OBJECT/*starsImgType(b - '1' + 1)*/);
+				ExportNPKFiles(starsImgType(b - '1' + 1));
 				printf("Done!\n");
 			}
 		}
