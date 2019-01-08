@@ -5,6 +5,8 @@
 #define COLOR_DOOR 0xFF00FF00
 #define COLOR_OBJECT 0xFFFFFF00
 #define COLOR_BLOCK 0xFFFF0000
+#define COLOR_ROOM_CLOSE 0xFFFF00FF
+#define COLOR_ROOM_OPEN 0xFFFF00FF
 
 //enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00, SCOLOR_ITEM = 0xFF00FF00 };
 
@@ -24,7 +26,6 @@ StarsGamePlayer::StarsGamePlayer()
 	m_iLeftRightEndTime = 0;
 	m_bStartAttack = false;
 	m_iLastUpdaetPlayerPos = 0;
-	m_bAllClear = false;
 	m_eSceneState = StarsSceneState_None;
 	m_ePlayerSide = StarsRunDirection_Left;
 }
@@ -123,17 +124,7 @@ void StarsGamePlayer::UpdateBattle()
 
 		m_kNearMonsterPos = FindMonster(m_kGameRect, ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
 	}
-
-	//if (!m_bAllClear)
-	//{
-	//	ST_POS kMapPos = FindPicture("NextDoor.bmp", m_kGameRect);
-	//	if (kMapPos.x != -1)
-	//	{
-	//		m_bAllClear = true;
-	//		m_eBattleState = StarsBattleState_AllClear;
-	//	}
-	//}
-	
+	UpdateMiniMapState();
 
 	switch (m_eBattleState)
 	{
@@ -273,6 +264,11 @@ ST_POS StarsGamePlayer::FindColor(DWORD dwColor, ST_RECT kRect, bool bUseLocalPo
 		kPos.y -= m_kGameRect.top;
 	}
 	return kPos;
+}
+
+void StarsGamePlayer::SetSceneState(StarsSceneState eState)
+{
+	m_eSceneState = eState;
 }
 
 void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
@@ -436,12 +432,90 @@ void StarsGamePlayer::Patrol()
 	}
 }
 
+void StarsGamePlayer::UpdateMiniMapState()
+{
+	int iMiniMapState = GetUserDataInt("iMiniMapState");
+	if (iMiniMapState == -1)	// 初始状态
+	{
+		iMiniMapState = 0;
+	}
+	if (iMiniMapState == 0)	// 查找玩家自己小地图位置
+	{
+		ST_POS kMiniMapPlayerPos = FindPicture("MiniMapPlayer.bmn", ST_RECT(m_kGameRect.right - 100, m_kGameRect.right, m_kGameRect.top + 50, m_kGameRect.top + 150), false);
+		if (kMiniMapPlayerPos.x != -1)
+		{
+			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
+			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
+			iMiniMapState = 1;
+		}
+	}
+	if (iMiniMapState == 1)	// 检查战斗结束
+	{
+		int iOffset[4][2] = { { -10, 0 }, { 10, 0 }, { 0, -10 }, {0, 10} };
+		for (int i = 0; i < 4; ++i)
+		{
+			ST_POS kRoomOpen = FindColor(COLOR_ROOM_OPEN, ST_RECT(GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] - 10, GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] + 10,
+				GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] - 10, GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] + 10), false);
+			if (kRoomOpen.x != -1)
+			{
+				iMiniMapState = 2;
+				break;
+			}
+		}
+	}
+	if (iMiniMapState == 2)	// 查找要进的房间
+	{
+		SetUserDataInt("iLastRoomDirection", int(StarsRunDirection_Left));
+		//save last state
+		iMiniMapState = 3;
+	}
+	if (iMiniMapState == 3)	// 等待进入房间
+	{
+		ST_POS kMiniMapPlayerPos = FindPicture("MiniMapPlayer.bmn", ST_RECT(m_kGameRect.right - 100, m_kGameRect.right, m_kGameRect.top + 50, m_kGameRect.top + 150), false);
+		if (kMiniMapPlayerPos.x != -1 && kMiniMapPlayerPos.x != GetUserDataInt("iMiniMapPlayerPosX"))
+		{
+			SetUserDataInt("iMiniMapPlayerPosXLast", GetUserDataInt("iMiniMapPlayerPosX"));
+			SetUserDataInt("iMiniMapPlayerPosYLast", GetUserDataInt("iMiniMapPlayerPosY"));
+			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
+			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
+			iMiniMapState = 1;
+		}
+	}
+
+	SetUserDataInt("iMiniMapState", iMiniMapState);
+}
+
 ST_POS StarsGamePlayer::FindMonster(const ST_RECT& kRect, ST_POS kStartPos)
 {
 	return FindColor(COLOR_MONSTER, kRect, true, kStartPos);
 }
 
-void StarsGamePlayer::SetSceneState(StarsSceneState eState)
+void StarsGamePlayer::SetUserDataInt(std::string& kStr, int iValue)
 {
-	m_eSceneState = eState;
+	m_akUserDataInt[kStr] = iValue;
+}
+
+int StarsGamePlayer::GetUserDataInt(std::string& kStr)
+{
+	std::map<std::string, int>::iterator itr = m_akUserDataInt.find(kStr);
+	if (itr != m_akUserDataInt.end())
+	{
+		return itr->second;
+	}
+	return -1;
+}
+
+void StarsGamePlayer::SetUserDataFloat(std::string& kStr, float fValue)
+{
+	m_akUserDataFloat[kStr] = fValue;
+}
+
+float StarsGamePlayer::GetUserDataFloat(std::string& kStr)
+{
+	std::map<std::string, float>::iterator itr = m_akUserDataFloat.find(kStr);
+	if (itr != m_akUserDataFloat.end())
+	{
+		return itr->second;
+	}
+	return -1;
 }

@@ -61,7 +61,13 @@ private:
 	void UpdateAttack();
 	// Ñ²Âß
 	void Patrol();
+	void UpdateMiniMapState();
+
 	ST_POS FindMonster(const ST_RECT& kRect, ST_POS kStartPos);
+	void SetUserDataInt(std::string& kStr, int iValue);
+	int GetUserDataInt(std::string& kStr);
+	void SetUserDataFloat(std::string& kStr, float fValue);
+	float GetUserDataFloat(std::string& kStr);
 private:
 	StarsGraphy*		m_pkStarsGraphy;
 	StarsControl*		m_pkStarsControl;
@@ -77,7 +83,8 @@ private:
 	ST_POS				m_kPlayerPos;
 	ST_POS				m_kNearMonsterPos;
 	DWORD				m_iLastUpdaetPlayerPos;
-	bool				m_bAllClear;
 	StarsSceneState		m_eSceneState;
 	StarsRunDirection	m_ePlayerSide;
+	std::map<std::string, int> m_akUserDataInt;
+	std::map<std::string, float> m_akUserDataFloat;
 };
