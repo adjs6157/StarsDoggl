@@ -1,14 +1,18 @@
 #include "StarsGamePlayer.h"
+#include <queue>
 
 #define COLOR_MONSTER 0xFFFF00FF
 #define COLOR_BOSS 0xFFFF00FF
 #define COLOR_DOOR 0xFF00FF00
 #define COLOR_OBJECT 0xFFFFFF00
 #define COLOR_BLOCK 0xFFFF0000
-#define COLOR_ROOM_CLOSE 0xFFFF00FF
-#define COLOR_ROOM_OPEN 0xFFFF00FF
+#define COLOR_ROOM_CLOSE 0xFFAAB450
+#define COLOR_ROOM_OPEN 0xFF416E14
+#define COLOR_ROOM_UNKOWN_CLOSE 0xFF417D8C
+#define COLOR_ROOM_UNKOWN_OPEN 0xFF142350
 
-//enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00, SCOLOR_ITEM = 0xFF00FF00 };
+//enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00,
+//SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFFAAB450, SCOLOR_MINIMAP_OPEN = 0xFF416E14, SCOLOR_MINIMAP_UNKONW = 0xFF417D8C, SCOLOR_MINIMAP_UNKONW_OPEN = 0xFF142350, SCOLOR_MONSTERICON = 0xFFC8C800};
 
 extern int iScreenShotWidth;
 extern int iScreenShotHeight;
@@ -207,7 +211,7 @@ void StarsGamePlayer::UpdateBattle()
 										ST_POS kMapPos = FindPicture("nextdoor", ST_RECT(0, 800, 0, 600));
 										if (kMapPos.x == -1)
 										{
-											m_bAllClear = false;
+											//m_bAllClear = false;
 											m_eBattleState = StarsBattleState_Start;
 										}
 										break;
@@ -441,33 +445,123 @@ void StarsGamePlayer::UpdateMiniMapState()
 	}
 	if (iMiniMapState == 0)	// 查找玩家自己小地图位置
 	{
-		ST_POS kMiniMapPlayerPos = FindPicture("MiniMapPlayer.bmn", ST_RECT(m_kGameRect.right - 100, m_kGameRect.right, m_kGameRect.top + 50, m_kGameRect.top + 150), false);
+		ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 150, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
 		if (kMiniMapPlayerPos.x != -1)
 		{
-			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
-			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
+			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x + 3);
+			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y + 6);
 			iMiniMapState = 1;
+			PrintLog("iMiniMapState:1");
 		}
 	}
 	if (iMiniMapState == 1)	// 检查战斗结束
 	{
-		int iOffset[4][2] = { { -10, 0 }, { 10, 0 }, { 0, -10 }, {0, 10} };
+		int iOffset[4][2] = { { -18, 0 }, { 18, 0 }, { 0, -18 }, {0, 18} };
 		for (int i = 0; i < 4; ++i)
 		{
-			ST_POS kRoomOpen = FindColor(COLOR_ROOM_OPEN, ST_RECT(GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] - 10, GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] + 10,
-				GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] - 10, GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] + 10), false);
+			ST_POS kRoomOpen = FindColor(COLOR_ROOM_OPEN, ST_RECT(GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] - 5, GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] + 5,
+				GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] - 5, GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] + 5), false);
 			if (kRoomOpen.x != -1)
 			{
 				iMiniMapState = 2;
+				PrintLog("iMiniMapState:2");
+				break;
+			}
+
+			ST_POS kRoomUnkownOpen = FindColor(COLOR_ROOM_UNKOWN_OPEN, ST_RECT(GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] - 5, GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] + 5,
+				GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] - 5, GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] + 5), false);
+			if (kRoomUnkownOpen.x != -1)
+			{
+				iMiniMapState = 2;
+				PrintLog("iMiniMapState:2");
 				break;
 			}
 		}
 	}
 	if (iMiniMapState == 2)	// 查找要进的房间
 	{
-		SetUserDataInt("iLastRoomDirection", int(StarsRunDirection_Left));
-		//save last state
-		iMiniMapState = 3;
+		ST_POS kMiniMapBossPos = FindPicture("BossMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 150, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
+		if (kMiniMapBossPos.x != -1)
+		{
+			// 递归查找路径
+			std::vector<ST_POS> akQueue;
+			std::vector<int> aiRoomType;
+			int iCurIndex = 0;
+			bool bVisited[50][50];
+			int iStartPosX = GetUserDataInt("iMiniMapPlayerPosX");
+			int iStartPosY = GetUserDataInt("iMiniMapPlayerPosY");
+			memset(bVisited, 0, 50 * 50);
+			akQueue.push_back(ST_POS(25 * 50 + 25, -1));
+			aiRoomType.push_back(-1);
+			bool bFindToBoss = false;
+
+			ST_POS kTempPoint;
+			int iTempIndex;
+			while (iCurIndex < akQueue.size())
+			{
+				ST_POS &kCurPoint = akQueue[iCurIndex];
+				iCurIndex++;
+
+				for (int k = 0; k < 4; ++k)
+				{
+					kTempPoint.x = aiDir[k][0] + kCurPoint.x;
+					kTempPoint.y = aiDir[k][1] + kCurPoint.y;
+					iTempIndex = kTempPoint.x + kTempPoint.y * 50;
+					if (getcolor(kTempPoint) == opendoor)
+					{
+						if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
+						{
+							m_akQueue[m_iQueueNum] = kTempPoint;
+							m_iQueueNum++;
+							m_aiVisitPoint[iTempIndex] = true;
+							if (isbossroom)
+							{
+								bFindToBoss = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			int BossPosX;
+			int BOssposY;
+			int iMinDis = 999;
+			int iMinDisIndex;
+			if (!bFindToBoss)
+			{
+				for (int i = 0; i < aiRoomType.size(); ++i)
+				{
+					if (aiRoomType[i] == ? )
+					{
+						if (distoboss < iMinDis)
+						{
+							iMinDis = distoboss;
+						}
+					}
+				}
+			}
+			else
+			{
+				iMinDisIndex = aiRoomType.size() - 1;
+			}
+
+			int iLastRoomIndex;
+			while (akQueue[iMinDisIndex].y != -1)
+			{
+				iLastRoomIndex = iMinDisIndex;
+				iMinDisIndex = akQueue[iMinDisIndex].y;
+			}
+
+			direction = iLastRoomIndex;
+
+			SetUserDataInt("iLastRoomDirection", int(StarsRunDirection_Left));
+			//save last state
+			iMiniMapState = 3;
+			PrintLog("iMiniMapState:3");
+		}
+
+		
 	}
 	if (iMiniMapState == 3)	// 等待进入房间
 	{
@@ -479,6 +573,7 @@ void StarsGamePlayer::UpdateMiniMapState()
 			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
 			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
 			iMiniMapState = 1;
+			PrintLog("iMiniMapState:1");
 		}
 	}
 
@@ -490,12 +585,12 @@ ST_POS StarsGamePlayer::FindMonster(const ST_RECT& kRect, ST_POS kStartPos)
 	return FindColor(COLOR_MONSTER, kRect, true, kStartPos);
 }
 
-void StarsGamePlayer::SetUserDataInt(std::string& kStr, int iValue)
+void StarsGamePlayer::SetUserDataInt(std::string kStr, int iValue)
 {
 	m_akUserDataInt[kStr] = iValue;
 }
 
-int StarsGamePlayer::GetUserDataInt(std::string& kStr)
+int StarsGamePlayer::GetUserDataInt(std::string kStr)
 {
 	std::map<std::string, int>::iterator itr = m_akUserDataInt.find(kStr);
 	if (itr != m_akUserDataInt.end())
@@ -505,12 +600,12 @@ int StarsGamePlayer::GetUserDataInt(std::string& kStr)
 	return -1;
 }
 
-void StarsGamePlayer::SetUserDataFloat(std::string& kStr, float fValue)
+void StarsGamePlayer::SetUserDataFloat(std::string kStr, float fValue)
 {
 	m_akUserDataFloat[kStr] = fValue;
 }
 
-float StarsGamePlayer::GetUserDataFloat(std::string& kStr)
+float StarsGamePlayer::GetUserDataFloat(std::string kStr)
 {
 	std::map<std::string, float>::iterator itr = m_akUserDataFloat.find(kStr);
 	if (itr != m_akUserDataFloat.end())
