@@ -84,6 +84,7 @@ public:
 	ST_POS FIndPictureORB(GameORBInfo& kGameORBInfo, const std::string& kPictureName);
 	ST_POS FindFont(const std::string& kStr, ST_RECT kRect);
 	ST_POS FindColor(DWORD dwColor, ST_RECT kRect, bool bFindColorBlock = true, ST_POS kStartPos = ST_POS(-1, -1));
+	DWORD GetColor(ST_POS kPos);
 	
 private:
 	void CheckRect(ST_RECT& kRect);

@@ -3,13 +3,17 @@
 
 #define COLOR_MONSTER 0xFFFF00FF
 #define COLOR_BOSS 0xFFFF00FF
-#define COLOR_DOOR 0xFF00FF00
+#define COLOR_DOOR_LEFTRIGHT 0xFF00FF00
+#define COLOR_DOOR_UP 0xFF00EE00
+#define COLOR_DOOR_DOWN 0xFF00DD00
 #define COLOR_OBJECT 0xFFFFFF00
 #define COLOR_BLOCK 0xFFFF0000
-#define COLOR_ROOM_CLOSE 0xFFAAB450
-#define COLOR_ROOM_OPEN 0xFF416E14
-#define COLOR_ROOM_UNKOWN_CLOSE 0xFF417D8C
-#define COLOR_ROOM_UNKOWN_OPEN 0xFF142350
+#define COLOR_ROOM_CLOSE 0xFF0000EE
+#define COLOR_ROOM_OPEN 0xFF0000DD
+#define COLOR_ROOM_UNKOWN_CLOSE 0xFF0000AA
+#define COLOR_ROOM_UNKOWN_OPEN 0xFF000099
+#define COLOR_ROOM_DOOR 0xFF000022
+#define COLOR_ROOM_BOSS 0xFF0000FE
 
 //enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00,
 //SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFFAAB450, SCOLOR_MINIMAP_OPEN = 0xFF416E14, SCOLOR_MINIMAP_UNKONW = 0xFF417D8C, SCOLOR_MINIMAP_UNKONW_OPEN = 0xFF142350, SCOLOR_MONSTERICON = 0xFFC8C800};
@@ -129,6 +133,10 @@ void StarsGamePlayer::UpdateBattle()
 		m_kNearMonsterPos = FindMonster(m_kGameRect, ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
 	}
 	UpdateMiniMapState();
+	if (GetUserDataInt("iMiniMapState") == 3)
+	{
+		m_eBattleState = StarsBattleState_AllClear;
+	}
 
 	switch (m_eBattleState)
 	{
@@ -189,30 +197,95 @@ void StarsGamePlayer::UpdateBattle()
 	case StarsBattleState_AllClear:
 	{
 									  m_eBattleState = StarsBattleState_FindDoor;
+									  StarsRunDirection eDir = (StarsRunDirection)GetUserDataInt("eRoomDirection");
+									  if (eDir == StarsRunDirection_Up)
+									  {
+										  SetUserDataInt("iNextDoorColor", COLOR_DOOR_UP);
+									  }
+									  else if (eDir == StarsRunDirection_Down)
+									  {
+										  SetUserDataInt("iNextDoorColor", COLOR_DOOR_DOWN);
+									  }
+									  else
+									  {
+										  SetUserDataInt("iNextDoorColor", COLOR_DOOR_LEFTRIGHT);
+									  }
+									  Patrol();
 									  PrintLog("ChangeState:FindDoor");
 									  break;
 	}
 	case StarsBattleState_FindDoor:
 	{
-
-									  ST_POS kDoorPos = FIndPictureORB("door.bmp");
+									  StarsRunDirection eDir = (StarsRunDirection)GetUserDataInt("eRoomDirection");
+									  DWORD dwDoorColor = GetUserDataInt("iNextDoorColor");
+									  ST_POS kDoorPos = FindColor(dwDoorColor, m_kGameRect);
 									  if (kDoorPos.x != -1 && kDoorPos.y != -1)
 									  {
-										  ActionRun(kDoorPos.x - 400, kDoorPos.y - 300);
+										  if (eDir == StarsRunDirection_Up || eDir == StarsRunDirection_Down)
+										  {
+											  ActionRun(kDoorPos.x - m_kPlayerPos.x, kDoorPos.y - m_kPlayerPos.y);
+											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 300);
+											  m_eBattleState = StarsBattleState_GoNextRoom;
+											  SetUserDataInt("GoNextRoomBlock", 0);
+											  PrintLog("ChangeState:GoNextRoom");
+										  }
+										  if (eDir == StarsRunDirection_Right && kDoorPos.x > 400 || eDir == StarsRunDirection_Left && kDoorPos.x < 400)
+										  {
+											  ActionRun(kDoorPos.x - m_kPlayerPos.x, kDoorPos.y - m_kPlayerPos.y);
+											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 300);
+											  m_eBattleState = StarsBattleState_GoNextRoom;
+											  SetUserDataInt("GoNextRoomBlock", 0);
+											  PrintLog("ChangeState:GoNextRoom");
+										  }									  
 									  }
 									  else
 									  {
-										  ActionRun(500, 0);
+										  Patrol();
 									  }
 									  break;
 	}
 	case StarsBattleState_GoNextRoom:
 	{
-										ST_POS kMapPos = FindPicture("nextdoor", ST_RECT(0, 800, 0, 600));
-										if (kMapPos.x == -1)
+										if (GetUserDataInt("iMiniMapState") != 4)
 										{
-											//m_bAllClear = false;
-											m_eBattleState = StarsBattleState_Start;
+											m_eBattleState = StarsBattleState_FindMonster;
+											PrintLog("ChangeState:FindMonster");
+										}
+										else if (timeGetTime() >= GetUserDataInt("GoDoorEndTime"))
+										{
+											int iBlock = GetUserDataInt("GoNextRoomBlock");
+											if (iBlock == 0)
+											{
+												PrintLog("GoNextRoomBlock:0");
+												SetUserDataInt("GoNextRoomBlockEndTime", timeGetTime() + 1500);
+												SetUserDataInt("GoNextRoomBlock", 1);
+
+												StarsRunDirection eDir = (StarsRunDirection)GetUserDataInt("eRoomDirection");
+												if (eDir == StarsRunDirection_Left)
+												{
+													ActionRun(m_kPlayerPos.x + 150, m_kPlayerPos.y);
+												}
+												else if (eDir == StarsRunDirection_Right)
+												{
+													ActionRun(m_kPlayerPos.x - 150, m_kPlayerPos.y);
+												}
+												else if (eDir == StarsRunDirection_Up)
+												{
+													ActionRun(m_kPlayerPos.x, m_kPlayerPos.y + 80);
+												}
+												else
+												{
+													ActionRun(m_kPlayerPos.x, m_kPlayerPos.y - 80);
+												}
+											}
+											else if (iBlock == 1)
+											{
+												if (timeGetTime() > GetUserDataInt("GoNextRoomBlockEndTime"))
+												{
+													m_eBattleState = StarsBattleState_FindDoor;
+													PrintLog("ChangeState:FindDoor");
+												}
+											}
 										}
 										break;
 	}
@@ -436,6 +509,7 @@ void StarsGamePlayer::Patrol()
 	}
 }
 
+
 void StarsGamePlayer::UpdateMiniMapState()
 {
 	int iMiniMapState = GetUserDataInt("iMiniMapState");
@@ -445,32 +519,29 @@ void StarsGamePlayer::UpdateMiniMapState()
 	}
 	if (iMiniMapState == 0)	// 查找玩家自己小地图位置
 	{
-		ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 150, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
+		if (m_eBattleState >= StarsBattleState_AllClear)
+		{
+			return;
+		}
+
+		ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 180, m_kGameRect.right, m_kGameRect.top + 20, m_kGameRect.top + 180), false);
 		if (kMiniMapPlayerPos.x != -1)
 		{
 			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x + 3);
-			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y + 6);
+			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y + 2);
 			iMiniMapState = 1;
 			PrintLog("iMiniMapState:1");
 		}
 	}
 	if (iMiniMapState == 1)	// 检查战斗结束
 	{
+		int iPlayerPosX = GetUserDataInt("iMiniMapPlayerPosX");
+		int iPlayerPosY = GetUserDataInt("iMiniMapPlayerPosY");
 		int iOffset[4][2] = { { -18, 0 }, { 18, 0 }, { 0, -18 }, {0, 18} };
 		for (int i = 0; i < 4; ++i)
 		{
-			ST_POS kRoomOpen = FindColor(COLOR_ROOM_OPEN, ST_RECT(GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] - 5, GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] + 5,
-				GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] - 5, GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] + 5), false);
-			if (kRoomOpen.x != -1)
-			{
-				iMiniMapState = 2;
-				PrintLog("iMiniMapState:2");
-				break;
-			}
-
-			ST_POS kRoomUnkownOpen = FindColor(COLOR_ROOM_UNKOWN_OPEN, ST_RECT(GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] - 5, GetUserDataInt("iMiniMapPlayerPosX") + iOffset[i][0] + 5,
-				GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] - 5, GetUserDataInt("iMiniMapPlayerPosY") + iOffset[i][1] + 5), false);
-			if (kRoomUnkownOpen.x != -1)
+			DWORD dwColor = m_pkStarsGraphy->GetColor(ST_POS(iPlayerPosX + iOffset[i][0], iPlayerPosY + iOffset[i][1]));
+			if (dwColor == COLOR_ROOM_OPEN || dwColor == COLOR_ROOM_UNKOWN_OPEN)
 			{
 				iMiniMapState = 2;
 				PrintLog("iMiniMapState:2");
@@ -483,38 +554,50 @@ void StarsGamePlayer::UpdateMiniMapState()
 		ST_POS kMiniMapBossPos = FindPicture("BossMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 150, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
 		if (kMiniMapBossPos.x != -1)
 		{
+			kMiniMapBossPos.x += 7;
+			kMiniMapBossPos.y += 7;
 			// 递归查找路径
-			std::vector<ST_POS> akQueue;
-			std::vector<int> aiRoomType;
+			std::vector<ST_RECT> akQueue;
 			int iCurIndex = 0;
 			bool bVisited[50][50];
 			int iStartPosX = GetUserDataInt("iMiniMapPlayerPosX");
 			int iStartPosY = GetUserDataInt("iMiniMapPlayerPosY");
+			const int aiDir[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+			const int aiDir1[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
 			memset(bVisited, 0, 50 * 50);
-			akQueue.push_back(ST_POS(25 * 50 + 25, -1));
-			aiRoomType.push_back(-1);
+			bVisited[25][25] = true;
+			akQueue.push_back(ST_RECT(25, 25, -1, -1));
 			bool bFindToBoss = false;
 
-			ST_POS kTempPoint;
-			int iTempIndex;
+			ST_RECT kTempPoint;
 			while (iCurIndex < akQueue.size())
 			{
-				ST_POS &kCurPoint = akQueue[iCurIndex];
+				ST_RECT &kCurPoint = akQueue[iCurIndex];
 				iCurIndex++;
 
 				for (int k = 0; k < 4; ++k)
 				{
-					kTempPoint.x = aiDir[k][0] + kCurPoint.x;
-					kTempPoint.y = aiDir[k][1] + kCurPoint.y;
-					iTempIndex = kTempPoint.x + kTempPoint.y * 50;
-					if (getcolor(kTempPoint) == opendoor)
+					kTempPoint.left = aiDir[k][0] + kCurPoint.left;
+					kTempPoint.right = aiDir[k][1] + kCurPoint.right;
+					if (kTempPoint.left >= 0 && kTempPoint.left < 50 && kTempPoint.right >= 0 && kTempPoint.right < 50 && !bVisited[kTempPoint.left][kTempPoint.right])
 					{
-						if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
+						// 避免误操作，检测两个点
+						if (m_pkStarsGraphy->GetColor(ST_POS(iStartPosX + (kCurPoint.left - 25) * 18 + aiDir[k][0] * 5, iStartPosY + (kCurPoint.right - 25) * 18 + aiDir[k][1] * 5)) == COLOR_ROOM_DOOR &&
+							m_pkStarsGraphy->GetColor(ST_POS(iStartPosX + (kCurPoint.left - 25) * 18 + aiDir[k][0] * 5 + aiDir1[k][0], iStartPosY + (kCurPoint.right - 25) * 18 + aiDir[k][1] * 5 + aiDir1[k][1])) == COLOR_ROOM_DOOR)
 						{
-							m_akQueue[m_iQueueNum] = kTempPoint;
-							m_iQueueNum++;
-							m_aiVisitPoint[iTempIndex] = true;
-							if (isbossroom)
+							DWORD dwTempColor = m_pkStarsGraphy->GetColor(ST_POS(iStartPosX + (kCurPoint.left - 25) * 18 + aiDir[k][0] * 18, iStartPosY + (kCurPoint.right - 25) * 18 + aiDir[k][1] * 18));
+							if (dwTempColor == COLOR_ROOM_CLOSE || dwTempColor == COLOR_ROOM_OPEN)
+							{
+								kTempPoint.top = 1;
+							}
+							else
+							{
+								kTempPoint.top = 2;
+							}
+							kTempPoint.bottom = iCurIndex - 1;
+							akQueue.push_back(kTempPoint);
+							bVisited[kTempPoint.left][kTempPoint.right] = true;
+							if (dwTempColor == COLOR_ROOM_BOSS && (iStartPosX + (kCurPoint.left - 25) * 18 + aiDir[k][0] * 18) == kMiniMapBossPos.x && (iStartPosY + (kCurPoint.right - 25) * 18 + aiDir[k][1] * 18) == kMiniMapBossPos.y)
 							{
 								bFindToBoss = true;
 								break;
@@ -522,58 +605,80 @@ void StarsGamePlayer::UpdateMiniMapState()
 						}
 					}
 				}
+				if (bFindToBoss)
+				{
+					break;
+				}
 			}
 
-			int BossPosX;
-			int BOssposY;
+			int iBossPosX = (kMiniMapBossPos.x - iStartPosX) / 18 + 25;
+			int iBossPosY = (kMiniMapBossPos.y - iStartPosY) / 18 + 25;
 			int iMinDis = 999;
-			int iMinDisIndex;
+			int iMinDisIndex = akQueue.size() - 1;
 			if (!bFindToBoss)
 			{
-				for (int i = 0; i < aiRoomType.size(); ++i)
+				for (int i = 0; i < akQueue.size(); ++i)
 				{
-					if (aiRoomType[i] == ? )
+					if (akQueue[i].top == 2)
 					{
-						if (distoboss < iMinDis)
+						int iTempDisToBoss = abs(akQueue[i].left - iBossPosX) + abs(akQueue[i].right - iBossPosY);
+						if (iTempDisToBoss < iMinDis)
 						{
-							iMinDis = distoboss;
+							iMinDis = iTempDisToBoss;
+							iMinDisIndex = i;
 						}
 					}
 				}
 			}
 			else
 			{
-				iMinDisIndex = aiRoomType.size() - 1;
+				iMinDisIndex = akQueue.size() - 1;
 			}
 
 			int iLastRoomIndex;
-			while (akQueue[iMinDisIndex].y != -1)
+			while (akQueue[iMinDisIndex].bottom != -1)
 			{
 				iLastRoomIndex = iMinDisIndex;
-				iMinDisIndex = akQueue[iMinDisIndex].y;
+				iMinDisIndex = akQueue[iMinDisIndex].bottom;
 			}
 
-			direction = iLastRoomIndex;
+			
+			StarsRunDirection eDoorDir = StarsRunDirection_None;
+			for (int i = 0; i < 4; ++i)
+			{
+				if (akQueue[iLastRoomIndex].left - 25 == aiDir[i][0] && akQueue[iLastRoomIndex].right - 25 == aiDir[i][1])
+				{
+					eDoorDir = StarsRunDirection(i + 1);
+					break;
+				}
+			}
 
-			SetUserDataInt("iLastRoomDirection", int(StarsRunDirection_Left));
+			SetUserDataInt("eRoomDirection", int(eDoorDir));
 			//save last state
 			iMiniMapState = 3;
 			PrintLog("iMiniMapState:3");
 		}
 
-		
 	}
-	if (iMiniMapState == 3)	// 等待进入房间
+	if (iMiniMapState == 3)
 	{
-		ST_POS kMiniMapPlayerPos = FindPicture("MiniMapPlayer.bmn", ST_RECT(m_kGameRect.right - 100, m_kGameRect.right, m_kGameRect.top + 50, m_kGameRect.top + 150), false);
+		if (m_eBattleState >= StarsBattleState_AllClear)
+		{
+			iMiniMapState = 4;
+			PrintLog("iMiniMapState:4");
+		}
+	}
+	if (iMiniMapState == 4)	// 等待进入房间
+	{
+		ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 180, m_kGameRect.right, m_kGameRect.top + 20, m_kGameRect.top + 180), false);
 		if (kMiniMapPlayerPos.x != -1 && kMiniMapPlayerPos.x != GetUserDataInt("iMiniMapPlayerPosX"))
 		{
 			SetUserDataInt("iMiniMapPlayerPosXLast", GetUserDataInt("iMiniMapPlayerPosX"));
 			SetUserDataInt("iMiniMapPlayerPosYLast", GetUserDataInt("iMiniMapPlayerPosY"));
 			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
 			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
-			iMiniMapState = 1;
-			PrintLog("iMiniMapState:1");
+			iMiniMapState = 0;
+			PrintLog("iMiniMapState:0");
 		}
 	}
 

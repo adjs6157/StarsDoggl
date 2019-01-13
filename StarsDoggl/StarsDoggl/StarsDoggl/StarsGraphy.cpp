@@ -477,6 +477,18 @@ ST_POS StarsGraphy::FindColor(DWORD dwColor, ST_RECT kRect, bool bFindColorBlock
 	return kPoint;
 }
 
+DWORD StarsGraphy::GetColor(ST_POS kPos)
+{
+	if (kPos.x >= 0 && kPos.x < iScreenShotWidth && kPos.y >= 0 && kPos.y < iScreenShotHeight)
+	{
+		return m_pkScreenShotData[kPos.y * iScreenShotWidth + kPos.x];
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 void StarsGraphy::LoadLocalPicture()
 {
 	std::vector<std::string> akPicturePath;

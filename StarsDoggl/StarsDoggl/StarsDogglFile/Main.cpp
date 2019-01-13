@@ -10,9 +10,24 @@
 enum compressType{ COMP_NONE = 5, COMP_ZLIB = 6, COMP_ZLIB2 = 7, COMP_UDEF = 0 };
 enum colorFormat{ ARGB8888 = 0x10, ARGB4444 = 0x0F, ARGB1555 = 0x0E, LINK = 0x11, DDS_DXT1 = 0x12, DDS_DXT3 = 0x13, DDS_DXT5 = 0x14, COLOR_UDEF = 0, V4_FMT, RGB565 };
 enum starsImgType{ SIMG_NONE = 0, SIMG_MONSTER = 1, SIMG_OBJECT = 2, SIMG_BLOCK = 3, SIMG_PATHGATE = 4, SIMG_ITEM = 5 };
-enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00,
-	SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFFAAB450, SCOLOR_MINIMAP_OPEN = 0xFF416E14, SCOLOR_MINIMAP_UNKONW = 0xFF417D8C, SCOLOR_MINIMAP_UNKONW_OPEN = 0xFF142350, SCOLOR_MONSTERICON = 0xFFC8C800
+enum starsImgColor{ 
+	SCOLOR_NONE = 0, 
+	SCOLOR_MONSTER = 0xFFFF00FF, 
+	SCOLOR_OBJECT = 0xFFFFFF00, 
+	SCOLOR_BLOCK = 0xFFFF0000, 
+	SCOLOR_PATHGATE = 0xFF00FF00,
+	SCOLOR_PATHGATE_UP = 0xFF00EE00,
+	SCOLOR_PATHGATE_DOWN = 0xFF00DD00,
+	SCOLOR_ITEM = 0xFF00FF00, 
+	SCOLOR_MINIMAP = 0xFF0000EE, 
+	SCOLOR_MINIMAP_OPEN = 0xFF0000DD, 
+	SCOLOR_MINIMAP_UNKONW = 0xFF0000AA, 
+	SCOLOR_MINIMAP_UNKONW_OPEN = 0xFF000099, 
+	SCOLOR_MINIMAP_DOOR = 0xFF000022,
+	SCOLOR_MONSTERICON = 0xFFC8C800
 };
+
+
 #define GAME_IMG_PATH "./NPKBack/"
 
 struct NPK_Header
@@ -528,7 +543,7 @@ void ExportSpecialNPKFileMiniMapBack()
 		akImgHeader[i].index_size = 0;
 		for (int j = 0; j < akImgHeader[i].index_count; ++j)
 		{
-			if (j == 0 || j == 4 || j == 120 || j == 121)
+			if (j % 4 == 0 || j == 120 || j == 121)
 			{
 				akImgHeader[i].index_size += 4 * 9;
 				iSizeCount += 4 * 9;
@@ -576,6 +591,8 @@ void ExportSpecialNPKFileMiniMapBack()
 	fwrite(kTempBuff, iTempBuffSize, 1, fpMy);
 	fwrite(dataSHA, 32, 1, fpMy);
 
+	int aiDoor[15][4] = { { 0, 0, 0, 1 }, { 1, 0, 0, 0 }, { 1, 0, 0, 1 }, { 0, 0, 1, 0 }, { 0, 0, 1, 1 }, { 1, 0, 1, 0 }, { 1, 0, 1, 1 }, 
+	{ 0, 1, 0, 0 }, { 0, 1, 0, 1 }, { 1, 1, 0, 0 }, { 1, 1, 0, 1 }, { 0, 1, 1, 0 }, { 0, 1, 1, 1 }, { 1, 1, 1, 0 }, { 1, 1, 1, 1 } };
 	for (int i = 0; i < kNpkHeader.count; ++i)
 	{
 		fwrite("Neople Img File", 16, 1, fpMy);
@@ -587,7 +604,7 @@ void ExportSpecialNPKFileMiniMapBack()
 		int iAllPixlCount = 0;
 		for (int j = 0; j < akImgHeader[i].index_count; ++j)
 		{
-			if (j == 0 || j == 4 || j == 120 || j == 121)
+			if (j % 4 == 0 || j == 120 || j == 121)
 			{
 				akImgIndex[i][j].dwType = ARGB8888;
 				fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
@@ -601,20 +618,12 @@ void ExportSpecialNPKFileMiniMapBack()
 				fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
 				fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
 
-				int iMiniSize = 2;
-				int iMaxSize = 16;
+				int iMiniSize = 4;
+				int iMaxSize = 14;
 				unsigned int iTempColor = 0;
 				if (akNameUncompress[i][akNameUncompress[i].length() - 8] == 'a')
 				{
-					if (j == 0)
-					{
-						iTempColor = SCOLOR_MINIMAP;
-					}
-					else if (j == 4)
-					{
-						iTempColor = SCOLOR_MINIMAP_OPEN;
-					}
-					else if (j == 120)
+					if (j == 120)
 					{
 						iTempColor = SCOLOR_MINIMAP_UNKONW;
 					}
@@ -622,8 +631,17 @@ void ExportSpecialNPKFileMiniMapBack()
 					{
 						iTempColor = SCOLOR_MINIMAP_UNKONW_OPEN;
 					}
+					else if ((j / 4) % 2 == 0)
+					{
+						iTempColor = SCOLOR_MINIMAP;
+					}
+					else if ((j / 4) % 2 == 1)
+					{
+						iTempColor = SCOLOR_MINIMAP_OPEN;
+					}
 				}
 
+				int iDoorArrayIndex = j / 8;
 				for (int k = 0; k < akImgIndex[i][j].height; ++k)
 				{
 					for (int l = 0; l < akImgIndex[i][j].width; ++l)
@@ -631,6 +649,26 @@ void ExportSpecialNPKFileMiniMapBack()
 						if (k > iMiniSize && k < iMaxSize && l > iMiniSize && l < iMaxSize)
 						{
 							iColorTemp[iAllPixlCount++] = iTempColor;
+						}
+						else if (j == 120 || j == 121)
+						{
+							iColorTemp[iAllPixlCount++] = 0x00000000;
+						}
+						else if (aiDoor[iDoorArrayIndex][0] > 0 && l > iMiniSize && l < iMaxSize && k > iMiniSize - 3 && k <= iMiniSize)
+						{
+							iColorTemp[iAllPixlCount++] = SCOLOR_MINIMAP_DOOR;
+						}
+						else if (aiDoor[iDoorArrayIndex][1] > 0 && l > iMiniSize && l < iMaxSize && k >= iMaxSize && k < iMaxSize + 3)
+						{
+							iColorTemp[iAllPixlCount++] = SCOLOR_MINIMAP_DOOR;
+						}
+						else if (aiDoor[iDoorArrayIndex][2] > 0 && l > iMiniSize - 3 && l <= iMiniSize && k > iMiniSize && k < iMaxSize)
+						{
+							iColorTemp[iAllPixlCount++] = SCOLOR_MINIMAP_DOOR;
+						}
+						else if (aiDoor[iDoorArrayIndex][3] > 0 && l >= iMaxSize && l < iMaxSize + 3 && k > iMiniSize && k < iMaxSize)
+						{
+							iColorTemp[iAllPixlCount++] = SCOLOR_MINIMAP_DOOR;
 						}
 						else
 						{
@@ -643,7 +681,7 @@ void ExportSpecialNPKFileMiniMapBack()
 			{
 				akImgIndex[i][j].dwType = LINK;
 				fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
-				akImgIndex[i][j].iLinkNum = ((j / 4) % 2) == 0 ? 0 : 4;
+				akImgIndex[i][j].iLinkNum = j / 4 * 4;
 				fwrite(&(akImgIndex[i][j].iLinkNum), sizeof(int), 1, fpMy);
 			}
 		}
@@ -836,7 +874,22 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 					else if (kSImgType == "SIMG_PATHGATE")
 					{
 						iMonsterHeight = 0;
-						iTempColor = SCOLOR_PATHGATE;
+						if (akNameUncompress[i].find("light") != std::string::npos)
+						{
+							iTempColor = 0;
+						}
+						else if (akNameUncompress[i].find("up") != std::string::npos)
+						{
+							iTempColor = SCOLOR_PATHGATE_UP;
+						}
+						else if (akNameUncompress[i].find("down") != std::string::npos)
+						{
+							iTempColor = SCOLOR_PATHGATE_DOWN;
+						}
+						else
+						{
+							iTempColor = SCOLOR_PATHGATE;
+						}
 					}
 					else if (kSImgType == "SIMG_ITEM")
 					{
