@@ -10,7 +10,9 @@
 enum compressType{ COMP_NONE = 5, COMP_ZLIB = 6, COMP_ZLIB2 = 7, COMP_UDEF = 0 };
 enum colorFormat{ ARGB8888 = 0x10, ARGB4444 = 0x0F, ARGB1555 = 0x0E, LINK = 0x11, DDS_DXT1 = 0x12, DDS_DXT3 = 0x13, DDS_DXT5 = 0x14, COLOR_UDEF = 0, V4_FMT, RGB565 };
 enum starsImgType{ SIMG_NONE = 0, SIMG_MONSTER = 1, SIMG_OBJECT = 2, SIMG_BLOCK = 3, SIMG_PATHGATE = 4, SIMG_ITEM = 5 };
-enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00, SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFF640096, SCOLOR_MONSTERICON = 0xFFC8C800};
+enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00,
+	SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFFAAB450, SCOLOR_MINIMAP_OPEN = 0xFF416E14, SCOLOR_MINIMAP_UNKONW = 0xFF417D8C, SCOLOR_MINIMAP_UNKONW_OPEN = 0xFF142350, SCOLOR_MONSTERICON = 0xFFC8C800
+};
 #define GAME_IMG_PATH "./NPKBack/"
 
 struct NPK_Header
@@ -471,6 +473,188 @@ void OutPutCombineConfig()
 		fclose(fp);
 	}
 	printf("%d/%d\n", 3, 3);
+}
+
+void ExportSpecialNPKFileMiniMapBack()
+{
+	char kStr[256];
+	std::vector<std::string> akSplitStr;
+
+	NPK_Header kNpkHeader;
+	std::vector<NPK_Index> akNpkIndex;
+	unsigned char dataSHA[32];
+	std::vector<NImgF_Header> akImgHeader;
+	std::vector<std::vector<NImgF_Index>> akImgIndex;
+
+	unsigned int iColorTemp[3500 * 3500];
+	int iCurNpkCount = 0;
+
+	printf("ExportSpecialNPKFiles\n");
+	std::string kName = GAME_IMG_PATH;
+	kName += "sprite_map_minimap.NPK";
+
+	akNpkIndex.clear();
+	akImgHeader.clear();
+	akImgIndex.clear();
+	ReadNPKFile(kName, kNpkHeader, akNpkIndex, dataSHA, akImgHeader, akImgIndex);
+
+	kName = "./FileExport/";
+	kName += "a";
+	kName += "sprite_map_minimap";
+	kName += ".NPK";
+
+	FILE *fpMy = fopen(kName.c_str(), "w+");
+	if (!fpMy)
+	{
+		printf("FileExport Faild!");
+		return;
+	}
+	fclose(fpMy);
+
+	fpMy = fopen(kName.c_str(), "wb");
+	if (!fpMy)
+	{
+		printf("FileExport Faild!");
+		return;
+	}
+	// 计算文件大小
+	std::vector<std::string> akNameUncompress;
+	int iSizeOffset = 0;
+	iSizeOffset += sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count + 32;
+	for (int i = 0; i < kNpkHeader.count; ++i)
+	{
+		int iSizeCount = 0;
+		iSizeCount += 4 * 8;
+		akImgHeader[i].index_size = 0;
+		for (int j = 0; j < akImgHeader[i].index_count; ++j)
+		{
+			if (j == 0 || j == 4 || j == 120 || j == 121)
+			{
+				akImgHeader[i].index_size += 4 * 9;
+				iSizeCount += 4 * 9;
+				iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+				akImgIndex[i][j].size = akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
+			}
+			else
+			{
+				akImgHeader[i].index_size += 4 * 2;
+				iSizeCount += 4 * 2;
+			}
+		}
+
+		akNameUncompress.push_back(akNpkIndex[i].name);
+		akNpkIndex[i].size = iSizeCount;
+		akNpkIndex[i].offset = iSizeOffset;
+		for (int j = 0; j < 256; ++j)
+		{
+			akNpkIndex[i].name[j] ^= decord_flag[j];
+		}
+
+		iSizeOffset += iSizeCount;
+	}
+
+	const int iTempBuffSize = sizeof(NPK_Header)+sizeof(NPK_Index)* kNpkHeader.count;
+	char* kTempBuff = new char[iTempBuffSize];
+	int iTempBuffIndex = 0;
+
+	//fwrite(&kNpkHeader, sizeof(NPK_Header), 1, fpMy);
+	memcpy(kTempBuff + iTempBuffIndex, &kNpkHeader, sizeof(NPK_Header));
+	iTempBuffIndex += sizeof(NPK_Header);
+	for (int i = 0; i < kNpkHeader.count; ++i)
+	{
+		//fwrite(&(akNpkIndex[i]), sizeof(NPK_Index), 1, fpMy);
+		memcpy(kTempBuff + iTempBuffIndex, &(akNpkIndex[i]), sizeof(NPK_Index));
+		iTempBuffIndex += sizeof(NPK_Index);
+	}
+
+	int len = iTempBuffSize / 17 * 17;
+	KoishiSHA256::SHA256 sha;
+	sha.reset();
+	sha.add(kTempBuff, len);
+	sha.getHash(dataSHA);
+
+	fwrite(kTempBuff, iTempBuffSize, 1, fpMy);
+	fwrite(dataSHA, 32, 1, fpMy);
+
+	for (int i = 0; i < kNpkHeader.count; ++i)
+	{
+		fwrite("Neople Img File", 16, 1, fpMy);
+		fwrite(&(akImgHeader[i].index_size), sizeof(int), 1, fpMy);
+		fwrite(&(akImgHeader[i].unknown1), sizeof(int), 1, fpMy);
+		akImgHeader[i].version = 2;
+		fwrite(&(akImgHeader[i].version), sizeof(int), 1, fpMy);
+		fwrite(&(akImgHeader[i].index_count), sizeof(int), 1, fpMy);
+		int iAllPixlCount = 0;
+		for (int j = 0; j < akImgHeader[i].index_count; ++j)
+		{
+			if (j == 0 || j == 4 || j == 120 || j == 121)
+			{
+				akImgIndex[i][j].dwType = ARGB8888;
+				fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
+				akImgIndex[i][j].dwCompress = COMP_NONE;
+				fwrite(&(akImgIndex[i][j].dwCompress), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].width), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].height), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].size), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].key_x), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].key_y), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].max_width), sizeof(int), 1, fpMy);
+				fwrite(&(akImgIndex[i][j].max_height), sizeof(int), 1, fpMy);
+
+				int iMiniSize = 2;
+				int iMaxSize = 16;
+				unsigned int iTempColor = 0;
+				if (akNameUncompress[i][akNameUncompress[i].length() - 8] == 'a')
+				{
+					if (j == 0)
+					{
+						iTempColor = SCOLOR_MINIMAP;
+					}
+					else if (j == 4)
+					{
+						iTempColor = SCOLOR_MINIMAP_OPEN;
+					}
+					else if (j == 120)
+					{
+						iTempColor = SCOLOR_MINIMAP_UNKONW;
+					}
+					else if (j == 121)
+					{
+						iTempColor = SCOLOR_MINIMAP_UNKONW_OPEN;
+					}
+				}
+
+				for (int k = 0; k < akImgIndex[i][j].height; ++k)
+				{
+					for (int l = 0; l < akImgIndex[i][j].width; ++l)
+					{
+						if (k > iMiniSize && k < iMaxSize && l > iMiniSize && l < iMaxSize)
+						{
+							iColorTemp[iAllPixlCount++] = iTempColor;
+						}
+						else
+						{
+							iColorTemp[iAllPixlCount++] = 0x00000000;
+						}
+					}
+				}
+			}
+			else
+			{
+				akImgIndex[i][j].dwType = LINK;
+				fwrite(&(akImgIndex[i][j].dwType), sizeof(int), 1, fpMy);
+				akImgIndex[i][j].iLinkNum = ((j / 4) % 2) == 0 ? 0 : 4;
+				fwrite(&(akImgIndex[i][j].iLinkNum), sizeof(int), 1, fpMy);
+			}
+		}
+		fwrite(iColorTemp, sizeof(int), iAllPixlCount, fpMy);
+	}
+	fclose(fpMy);
+}
+
+void ExportSpecialNPKFiles()
+{
+	ExportSpecialNPKFileMiniMapBack();
 }
 
 void ExportNPKFiles(starsImgType eStarsImgTYpe)
@@ -937,7 +1121,7 @@ int main()
 	//}
 	//fclose(fpMy);
 	
-	printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n");
+	printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n4:ExportSpecialNPKFiles\n");
 	char a;
 	while (a = getchar())
 	{
@@ -970,6 +1154,11 @@ int main()
 		else if (a == '2')
 		{
 			OutPutCombineConfig();
+			printf("Done!\n");
+		}
+		else if (a == '4')
+		{
+			ExportSpecialNPKFiles();
 			printf("Done!\n");
 		}
 		printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n");

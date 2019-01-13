@@ -64,10 +64,10 @@ private:
 	void UpdateMiniMapState();
 
 	ST_POS FindMonster(const ST_RECT& kRect, ST_POS kStartPos);
-	void SetUserDataInt(std::string& kStr, int iValue);
-	int GetUserDataInt(std::string& kStr);
-	void SetUserDataFloat(std::string& kStr, float fValue);
-	float GetUserDataFloat(std::string& kStr);
+	void SetUserDataInt(std::string kStr, int iValue);
+	int GetUserDataInt(std::string kStr);
+	void SetUserDataFloat(std::string kStr, float fValue);
+	float GetUserDataFloat(std::string kStr);
 private:
 	StarsGraphy*		m_pkStarsGraphy;
 	StarsControl*		m_pkStarsControl;
@@ -82,6 +82,7 @@ private:
 	ST_RECT				m_kGameRect;
 	ST_POS				m_kPlayerPos;
 	ST_POS				m_kNearMonsterPos;
+	ST_POS				m_kNearDoorPos;
 	DWORD				m_iLastUpdaetPlayerPos;
 	StarsSceneState		m_eSceneState;
 	StarsRunDirection	m_ePlayerSide;
