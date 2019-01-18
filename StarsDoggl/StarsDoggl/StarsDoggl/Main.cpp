@@ -16,6 +16,7 @@ HINSTANCE			g_hInstance = 0;
 
 StarsGamePlayer g_kGamePlayer;
 HWND			g_iTargetGameHandle = 0;
+bool			g_bNoControl = false;
 
 HWND g_hButtonCurrPut = 0;
 HWND g_hButtonAltStopAttack = 0;
@@ -289,6 +290,11 @@ LONG WINAPI ExceptionFilter(LPEXCEPTION_POINTERS lpExceptionInfo)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	if (strcmp(lpCmdLine, "NOCONTROL") == 0)
+	{
+		g_bNoControl = true;
+	}
+
 	if (!CreateWnd(hInstance))
 	{
 		return 0;

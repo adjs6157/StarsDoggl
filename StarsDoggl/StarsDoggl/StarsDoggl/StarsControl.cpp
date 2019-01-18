@@ -7,6 +7,7 @@
 #define key_dat 0x60//键盘数据端口
 
 extern HWND g_iTargetGameHandle;
+extern bool g_bNoControl;
 
 void KBCwait4IBE() {
 
@@ -82,10 +83,12 @@ StarsControl::~StarsControl()
 
 bool StarsControl::Initalize()
 {
-	if (!InitializeWinIo())
+	if (!g_bNoControl)
 	{
-		MessageBoxA(NULL, "WinIo初始化失败", "Warning", MB_OK);
-		return false;
+		if (!InitializeWinIo())
+		{
+			MessageBoxA(NULL, "WinIo初始化失败", "Warning", MB_OK);
+		}
 	}
 	return true;
 }
@@ -98,13 +101,14 @@ bool StarsControl::Finitalize()
 
 void StarsControl::Update()
 {
+	
 	//MakeKeyDown('A');
 	//MakeKeyDownEx(VK_RIGHT);
 }
 
 void StarsControl::OnKeyDown(DWORD dwKey)
 {
-	if (g_iTargetGameHandle == 0)
+	if (g_bNoControl)
 	{
 		return;
 	}
@@ -120,7 +124,7 @@ void StarsControl::OnKeyDown(DWORD dwKey)
 
 void StarsControl::OnKeyUp(DWORD dwKey)
 {
-	if (g_iTargetGameHandle == 0)
+	if (g_bNoControl)
 	{
 		return;
 	}

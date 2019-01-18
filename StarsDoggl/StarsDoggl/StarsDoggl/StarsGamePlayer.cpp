@@ -13,7 +13,7 @@
 #define COLOR_ROOM_UNKOWN_CLOSE 0xFF0000AA
 #define COLOR_ROOM_UNKOWN_OPEN 0xFF000099
 #define COLOR_ROOM_DOOR 0xFF000022
-#define COLOR_ROOM_BOSS 0xFF0000FE
+#define COLOR_ROOM_BOSS 0xFF0000CC
 
 //enum starsImgColor{ SCOLOR_NONE = 0, SCOLOR_MONSTER = 0xFFFF00FF, SCOLOR_OBJECT = 0xFFFFFF00, SCOLOR_BLOCK = 0xFFFF0000, SCOLOR_PATHGATE = 0xFF00FF00,
 //SCOLOR_ITEM = 0xFF00FF00, SCOLOR_MINIMAP = 0xFFAAB450, SCOLOR_MINIMAP_OPEN = 0xFF416E14, SCOLOR_MINIMAP_UNKONW = 0xFF417D8C, SCOLOR_MINIMAP_UNKONW_OPEN = 0xFF142350, SCOLOR_MONSTERICON = 0xFFC8C800};
@@ -82,12 +82,22 @@ void StarsGamePlayer::Update()
 	else
 	{
 		RECT kGameRect;
-		GetWindowRect(g_iTargetGameHandle, &kGameRect);
+		if (GetWindowRect(g_iTargetGameHandle, &kGameRect))
+		{
+			m_kGameRect.left = kGameRect.left;
+			m_kGameRect.right = kGameRect.right;
+			m_kGameRect.top = kGameRect.top;
+			m_kGameRect.bottom = kGameRect.bottom;
+		}
+		else
+		{
+			m_kGameRect.left = 0;
+			m_kGameRect.right = 830;
+			m_kGameRect.top = 0;
+			m_kGameRect.bottom = 750;
+			g_iTargetGameHandle = FindWindowA(NULL, "地下城与勇士");
+		}
 		
-		m_kGameRect.left = kGameRect.left;
-		m_kGameRect.right = kGameRect.right;
-		m_kGameRect.top = kGameRect.top;
-		m_kGameRect.bottom = kGameRect.bottom;
 	}
 	
 
@@ -160,13 +170,12 @@ void StarsGamePlayer::UpdateBattle()
 										 else
 										 {
 											 Patrol();
-											 PrintLog("Patrol");
 										 }
 										 break;
 	}
 	case StarsBattleState_GoMonster:
 	{
-									   if (m_eLeftRight == StarsRunDirection_None && m_eRunUpDown == StarsRunDirection_None)
+									   //if (m_eLeftRight == StarsRunDirection_None && m_eRunUpDown == StarsRunDirection_None)
 									   {
 										   m_eBattleState = StarsBattleState_AttackMonster;
 										   PrintLog("ChangeState:AttackMonster");
@@ -181,11 +190,19 @@ void StarsGamePlayer::UpdateBattle()
 											   PrintLog("LostTarget:FindMonster");
 											   ActionAttack(false);
 										   }
-										   else if (fabsf(m_kNearMonsterPos.x - m_kPlayerPos.x) > 90 || fabsf(m_kNearMonsterPos.y - m_kPlayerPos.y) > 20)
+										   else if (fabsf(m_kNearMonsterPos.x - m_kPlayerPos.x) > 160 || fabsf(m_kNearMonsterPos.y - m_kPlayerPos.y) > 20)
 										   {
-											   PrintLog("MonsterXoutOfRange::%d,%d", m_kNearMonsterPos.x, m_kNearMonsterPos.y);
+											   //PrintLog("MonsterXoutOfRange::%d,%d", m_kNearMonsterPos.x, m_kNearMonsterPos.y);
 											   ActionAttack(false);
 											   ActionRun(m_kNearMonsterPos.x - m_kPlayerPos.x, m_kNearMonsterPos.y - m_kPlayerPos.y);
+											   if (fabsf(m_kNearMonsterPos.x - m_kPlayerPos.x) <= 160)
+											   {
+												   ActionStopRun(m_eLeftRight);
+											   }
+											   if (fabsf(m_kNearMonsterPos.y - m_kPlayerPos.y) <= 20)
+											   {
+												   ActionStopRun(m_eRunUpDown);
+											   }
 										   }
 										   else
 										   {
@@ -216,6 +233,13 @@ void StarsGamePlayer::UpdateBattle()
 	}
 	case StarsBattleState_FindDoor:
 	{
+									  if (GetUserDataInt("iMiniMapState") != 4)
+									  {
+										  m_eBattleState = StarsBattleState_FindMonster;
+										  PrintLog("ChangeState:FindMonster");
+										  break;
+									  }
+
 									  StarsRunDirection eDir = (StarsRunDirection)GetUserDataInt("eRoomDirection");
 									  DWORD dwDoorColor = GetUserDataInt("iNextDoorColor");
 									  ST_POS kDoorPos = FindColor(dwDoorColor, m_kGameRect);
@@ -224,7 +248,7 @@ void StarsGamePlayer::UpdateBattle()
 										  if (eDir == StarsRunDirection_Up || eDir == StarsRunDirection_Down)
 										  {
 											  ActionRun(kDoorPos.x - m_kPlayerPos.x, kDoorPos.y - m_kPlayerPos.y);
-											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 300);
+											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 1300);
 											  m_eBattleState = StarsBattleState_GoNextRoom;
 											  SetUserDataInt("GoNextRoomBlock", 0);
 											  PrintLog("ChangeState:GoNextRoom");
@@ -232,7 +256,7 @@ void StarsGamePlayer::UpdateBattle()
 										  if (eDir == StarsRunDirection_Right && kDoorPos.x > 400 || eDir == StarsRunDirection_Left && kDoorPos.x < 400)
 										  {
 											  ActionRun(kDoorPos.x - m_kPlayerPos.x, kDoorPos.y - m_kPlayerPos.y);
-											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 300);
+											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 1300);
 											  m_eBattleState = StarsBattleState_GoNextRoom;
 											  SetUserDataInt("GoNextRoomBlock", 0);
 											  PrintLog("ChangeState:GoNextRoom");
@@ -250,8 +274,10 @@ void StarsGamePlayer::UpdateBattle()
 										{
 											m_eBattleState = StarsBattleState_FindMonster;
 											PrintLog("ChangeState:FindMonster");
+											break;
 										}
-										else if (timeGetTime() >= GetUserDataInt("GoDoorEndTime"))
+
+										if (timeGetTime() >= GetUserDataInt("GoDoorEndTime"))
 										{
 											int iBlock = GetUserDataInt("GoNextRoomBlock");
 											if (iBlock == 0)
@@ -380,10 +406,7 @@ void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
 	}
 	else if (m_eLeftRight != StarsRunDirection_None)
 	{
-		m_pkStarsControl->OnKeyUp(m_eLeftRight == StarsRunDirection_Left ? VK_LEFT : VK_RIGHT);
-		Sleep(20);
-		m_eLeftRight = StarsRunDirection_None;
-		m_iLeftRightEndTime = 0;
+		ActionStopRun(m_eLeftRight);
 	}
 
 	if (fDisY != 0)
@@ -408,6 +431,21 @@ void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
 		
 	}
 	else if(m_eRunUpDown != StarsRunDirection_None)
+	{
+		ActionStopRun(m_eRunUpDown);
+	}
+}
+
+void StarsGamePlayer::ActionStopRun(StarsRunDirection eDir)
+{
+	if (eDir == StarsRunDirection_Left || eDir == StarsRunDirection_Right || eDir == StarsRunDirection_None)
+	{
+		m_pkStarsControl->OnKeyUp(m_eLeftRight == StarsRunDirection_Left ? VK_LEFT : VK_RIGHT);
+		Sleep(20);
+		m_eLeftRight = StarsRunDirection_None;
+		m_iLeftRightEndTime = 0;
+	}
+	if (eDir == StarsRunDirection_Up || eDir == StarsRunDirection_Down || eDir == StarsRunDirection_None)
 	{
 		m_pkStarsControl->OnKeyUp(m_eRunUpDown == StarsRunDirection_Up ? VK_UP : VK_DOWN);
 		Sleep(20);
@@ -572,7 +610,7 @@ void StarsGamePlayer::UpdateMiniMapState()
 			ST_RECT kTempPoint;
 			while (iCurIndex < akQueue.size())
 			{
-				ST_RECT &kCurPoint = akQueue[iCurIndex];
+				ST_RECT kCurPoint = akQueue[iCurIndex];
 				iCurIndex++;
 
 				for (int k = 0; k < 4; ++k)
@@ -636,10 +674,12 @@ void StarsGamePlayer::UpdateMiniMapState()
 			}
 
 			int iLastRoomIndex;
+			int iStep = 0;
 			while (akQueue[iMinDisIndex].bottom != -1)
 			{
 				iLastRoomIndex = iMinDisIndex;
 				iMinDisIndex = akQueue[iMinDisIndex].bottom;
+				iStep++;
 			}
 
 			
@@ -654,9 +694,13 @@ void StarsGamePlayer::UpdateMiniMapState()
 			}
 
 			SetUserDataInt("eRoomDirection", int(eDoorDir));
+			SetUserDataInt("bIsBossRoom", (iStep == 1 && bFindToBoss));
 			//save last state
 			iMiniMapState = 3;
 			PrintLog("iMiniMapState:3");
+			char ac[5][40] = { { "StarsRunDirection_None" },{ "StarsRunDirection_Left" }, { "StarsRunDirection_Right" }, { "StarsRunDirection_Up" }, { "StarsRunDirection_Down" } };
+			PrintLog("eRoomDirection:%s", ac[int(eDoorDir)]);
+			PrintLog("bIsBossRoom:%d,%d,%d", iStep, bFindToBoss, (iStep == 1 && bFindToBoss));
 		}
 
 	}
@@ -670,15 +714,42 @@ void StarsGamePlayer::UpdateMiniMapState()
 	}
 	if (iMiniMapState == 4)	// 等待进入房间
 	{
-		ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 180, m_kGameRect.right, m_kGameRect.top + 20, m_kGameRect.top + 180), false);
-		if (kMiniMapPlayerPos.x != -1 && kMiniMapPlayerPos.x != GetUserDataInt("iMiniMapPlayerPosX"))
+		int iIsBossRoom = GetUserDataInt("bIsBossRoom");
+		if (iIsBossRoom == 0)
 		{
-			SetUserDataInt("iMiniMapPlayerPosXLast", GetUserDataInt("iMiniMapPlayerPosX"));
-			SetUserDataInt("iMiniMapPlayerPosYLast", GetUserDataInt("iMiniMapPlayerPosY"));
-			SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
-			SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
-			iMiniMapState = 0;
-			PrintLog("iMiniMapState:0");
+			ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 180, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
+			PrintLog("kMiniMapPlayerPos:%d,%d", kMiniMapPlayerPos.x, kMiniMapPlayerPos.y);
+			if (kMiniMapPlayerPos.x != -1)
+			{
+				kMiniMapPlayerPos.x += 3;
+				kMiniMapPlayerPos.y += 2;
+				if (kMiniMapPlayerPos.x != GetUserDataInt("iMiniMapPlayerPosX") || kMiniMapPlayerPos.y != GetUserDataInt("iMiniMapPlayerPosY"))
+				{
+					SetUserDataInt("iMiniMapPlayerPosXLast", GetUserDataInt("iMiniMapPlayerPosX"));
+					SetUserDataInt("iMiniMapPlayerPosYLast", GetUserDataInt("iMiniMapPlayerPosY"));
+					SetUserDataInt("iMiniMapPlayerPosX", kMiniMapPlayerPos.x);
+					SetUserDataInt("iMiniMapPlayerPosY", kMiniMapPlayerPos.y);
+					iMiniMapState = 0;
+					PrintLog("iMiniMapState:0");
+					PrintLog("iMiniPX:%d, iMiniPY:%d", kMiniMapPlayerPos.x, kMiniMapPlayerPos.y);
+					PrintLog("iLastPX:%d, iLastPY:%d", GetUserDataInt("iMiniMapPlayerPosXLast"), GetUserDataInt("iMiniMapPlayerPosYLast"));
+				}
+			}
+		}
+		else
+		{
+			ST_POS kMiniMapBossPos = FindPicture("BossMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 180, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
+			PrintLog("kMiniMapBossPos:%d,%d", kMiniMapBossPos.x, kMiniMapBossPos.y);
+			if (kMiniMapBossPos.x != -1)
+			{
+				ST_POS kMiniMapPlayerPos = FindPicture("PlayerMiniMapIcon.bmp", ST_RECT(m_kGameRect.right - 180, m_kGameRect.right, m_kGameRect.top + 30, m_kGameRect.top + 180), false);
+				PrintLog("kMiniMapPlayerPos:%d,%d", kMiniMapPlayerPos.x, kMiniMapPlayerPos.y);
+				if (kMiniMapPlayerPos.x == -1)
+				{
+					iMiniMapState = 0;
+					PrintLog("iMiniMapState:0");
+				}
+			}
 		}
 	}
 

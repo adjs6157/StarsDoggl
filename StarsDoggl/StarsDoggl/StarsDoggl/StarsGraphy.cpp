@@ -112,7 +112,7 @@ void StarsGraphy::Update(const ST_RECT& kGameRect)
 	//}
 
 	//RotateImg(m_pkScreenShotData);
-	//SaveBmpFile("1.bmp", m_pkScreenShotData, m_iImgDataSize);
+	//SaveBmpFile("1.bmp", m_pkScreenShotData, iScreenShotWidth, iScreenShotHeight);
 
 	//ST_POS kPosPic = FindPicture("test2.bmp", ST_RECT(0, 60, 0, 60));
 
@@ -650,6 +650,7 @@ void StarsGraphy::GetFiles(std::string path, std::vector<std::string>& filePaths
 
 void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& kGamePictureInfo)
 {
+	kGamePictureInfo.fComPareRate = 0;
 	memset(m_aiVisitPoint, 0, iScreenShotWidth * iScreenShotHeight);
 	m_iQueueIndex = 0;
 	m_iQueueNum = 0;

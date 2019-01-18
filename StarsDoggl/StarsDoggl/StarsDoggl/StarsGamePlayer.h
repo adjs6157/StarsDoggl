@@ -56,6 +56,7 @@ public:
 	void SetSceneState(StarsSceneState eState);
 private:
 	void ActionRun(float fDisX, float fDisY);
+	void ActionStopRun(StarsRunDirection eDir);
 	void UpdateRun();
 	void ActionAttack(bool bStart);
 	void UpdateAttack();
