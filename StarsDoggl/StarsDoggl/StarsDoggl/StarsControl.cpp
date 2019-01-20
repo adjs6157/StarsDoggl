@@ -9,6 +9,8 @@
 extern HWND g_iTargetGameHandle;
 extern bool g_bNoControl;
 
+extern void PrintLog(const char *format, ...);
+
 void KBCwait4IBE() {
 
 	DWORD ch = 0; //注意，在这循环，我并没有改变键盘命令端口的数据，但也不会出现死循环，/ 因为键盘中断会在中间把数据读取并置零，那就不会导致死循环了
@@ -71,6 +73,94 @@ void MakeKeyUpEx(DWORD VirtualKey)
 	SetPortVal(key_dat, K_Break_Code, 1);
 }
 
+bool StopDNFDriver()
+{
+	SC_HANDLE hSCManager;
+	SC_HANDLE hService;
+	SERVICE_STATUS ServiceStatus;
+	bool bResult = false;
+
+	hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+
+	if (hSCManager)
+	{
+		hService = OpenService(hSCManager, "tesrsdt", SERVICE_ALL_ACCESS);
+
+		CloseServiceHandle(hSCManager);
+
+		if (hService)
+		{
+			bResult = ControlService(hService, SERVICE_CONTROL_STOP, &ServiceStatus);
+			if (bResult)
+			{
+				PrintLog("ControlService成功:%u", GetLastError());
+			}
+			else
+			{
+				DWORD dwError = GetLastError();
+
+				PrintLog("ControlService失败:%u", dwError);
+
+				TCHAR szBuf[128];
+				LPVOID lpMsgBuf;
+				
+				FormatMessage(
+					FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+					NULL,
+					dwError,
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+					(LPTSTR)&lpMsgBuf,
+					0, NULL);
+				wsprintf(szBuf,
+					("原因:%s"), lpMsgBuf);
+				LocalFree(lpMsgBuf);
+				PrintLog(szBuf);
+			}
+			CloseServiceHandle(hService);
+		}
+		else
+		{
+			PrintLog("hService失败");
+			TCHAR szBuf[128];
+			LPVOID lpMsgBuf;
+			DWORD dw = GetLastError();
+			FormatMessage(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+				NULL,
+				dw,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPTSTR)&lpMsgBuf,
+				0, NULL);
+			wsprintf(szBuf,
+				("原因:%s"), lpMsgBuf);
+			LocalFree(lpMsgBuf);
+			PrintLog(szBuf);
+			return false;
+		}
+	}
+	else
+	{
+		PrintLog("hSCManager失败");
+		TCHAR szBuf[128];
+		LPVOID lpMsgBuf;
+		DWORD dw = GetLastError();
+		FormatMessage(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL,
+			dw,
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			(LPTSTR)&lpMsgBuf,
+			0, NULL);
+		wsprintf(szBuf,
+			("原因:%s"), lpMsgBuf);
+		LocalFree(lpMsgBuf);
+		PrintLog(szBuf);
+		return false;
+	}
+
+	return bResult;
+}
+
 StarsControl::StarsControl()
 {
 
@@ -85,6 +175,7 @@ bool StarsControl::Initalize()
 {
 	if (!g_bNoControl)
 	{
+		StopDNFDriver();
 		if (!InitializeWinIo())
 		{
 			MessageBoxA(NULL, "WinIo初始化失败", "Warning", MB_OK);

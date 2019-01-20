@@ -340,7 +340,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{
 			Sleep(iDeltaTime);
 		}
-
+		//PrintLog("iDeltaTime:%d", timeGetTime() - s_iFrameTime);
 		s_iFrameTime = timeGetTime();
 
 		if (g_iTargetGameHandle == 0)

@@ -670,7 +670,7 @@ void StarsGraphy::ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iE
 			kTempPoint.x = aiDir[k][0] + kCurPoint.x;
 			kTempPoint.y = aiDir[k][1] + kCurPoint.y;
 			iTempIndex = kTempPoint.x + kTempPoint.y * iScreenShotWidth;
-			if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
+			if (!m_aiVisitPoint[iTempIndex] && kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY)
 			{
 				m_akQueue[m_iQueueNum] = kTempPoint;
 				m_iQueueNum++;
@@ -787,16 +787,18 @@ ST_POS StarsGraphy::ComPareColorNormal(int iBeginX, int iEndX, int iBeginY, int 
 	const int aiDir[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
 	ST_POS kTempPoint;
 	int iTempIndex;
+	int iCurIndex;
 	while (m_iQueueIndex < m_iQueueNum)
 	{
 		ST_POS &kCurPoint = m_akQueue[m_iQueueIndex];
+		iCurIndex = (kCurPoint.y) * iScreenShotWidth + (kCurPoint.x);
 		m_iQueueIndex++;
 		for (int k = 0; k < 4; ++k)
 		{
 			kTempPoint.x = aiDir[k][0] + kCurPoint.x;
 			kTempPoint.y = aiDir[k][1] + kCurPoint.y;
 			iTempIndex = kTempPoint.x + kTempPoint.y * iScreenShotWidth;
-			if (kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY && !m_aiVisitPoint[iTempIndex])
+			if (!m_aiVisitPoint[iTempIndex] && kTempPoint.x >= iBeginX && kTempPoint.x <= iEndX && kTempPoint.y >= iBeginY && kTempPoint.y <= iEndY)
 			{
 				m_akQueue[m_iQueueNum] = kTempPoint;
 				m_iQueueNum++;
@@ -804,7 +806,7 @@ ST_POS StarsGraphy::ComPareColorNormal(int iBeginX, int iEndX, int iBeginY, int 
 			}
 		}
 
-		if (dwColor == m_pkScreenShotData[(kCurPoint.y) * iScreenShotWidth + (kCurPoint.x)])
+		if (dwColor == m_pkScreenShotData[iCurIndex])
 		{
 			// 不需要找色块直接返回
 			if (!bFindColorBlock)
