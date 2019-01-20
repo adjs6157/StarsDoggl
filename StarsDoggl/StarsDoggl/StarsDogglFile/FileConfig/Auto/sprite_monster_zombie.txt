@@ -1,0 +1,10 @@
+sprite/monster/zombie/ghoulgwish.img|SIMG_MONSTER
+sprite/monster/zombie/holloweye.img|SIMG_MONSTER
+sprite/monster/zombie/nicolzombie.img|SIMG_MONSTER
+sprite/monster/zombie/zeyeball.img|SIMG_MONSTER
+sprite/monster/zombie/zeyeballglow.img|SIMG_MONSTER
+sprite/monster/zombie/zeyeexplode.img|SIMG_MONSTER
+sprite/monster/zombie/zeyeexplodeglow.img|SIMG_MONSTER
+sprite/monster/zombie/zeyethrow.img|SIMG_MONSTER
+sprite/monster/zombie/zeyethrowglow.img|SIMG_MONSTER
+sprite/monster/zombie/zombie.img|SIMG_MONSTER

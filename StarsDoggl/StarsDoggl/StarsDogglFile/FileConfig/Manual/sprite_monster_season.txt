@@ -1,0 +1,3 @@
+sprite/monster/season/loopfloor.img|SIMG_MONSTER
+sprite/monster/season/loopfloor2.img|SIMG_MONSTER
+sprite/monster/season/loopselect.img|SIMG_MONSTER

@@ -1,0 +1,8 @@
+sprite/map/town/evildom/dvildom_contact/object/back_far.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/back_far_cloud.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/bush.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/bush_front.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/echorn_step1.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/echorn_step2.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/echorn_step3.img|SIMG_NONE
+sprite/map/town/evildom/dvildom_contact/object/echorn_step4.img|SIMG_NONE

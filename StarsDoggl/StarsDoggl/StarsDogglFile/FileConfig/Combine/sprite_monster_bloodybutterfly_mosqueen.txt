@@ -1,0 +1,9 @@
+sprite/monster/bloodybutterfly/mosqueen/butterfly.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/cocoon.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/cocoon_ptl1.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/cocoon_ptl2.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/cocoon_ptl3.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/dock_missile.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/mosqueen.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/scratch_effect.img|SIMG_MONSTER
+sprite/monster/bloodybutterfly/mosqueen/tornado.img|SIMG_MONSTER

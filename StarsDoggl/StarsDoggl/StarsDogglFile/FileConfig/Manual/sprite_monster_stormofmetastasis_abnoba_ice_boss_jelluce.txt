@@ -1,0 +1,17 @@
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/boss_jelluce_body.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/boss_jelluce_crown.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/breathe-bot.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/breathe-top.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/crown-dodge.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/crownbreak-dodge.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/crownbreak-normal.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/death-dodge.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/death-normal.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/iceshield.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/icespear-dodge.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/icespear-normal.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/particle.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/smoke-dodge.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/swing1.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/swing2.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/abnoba/ice/boss_jelluce/sword-dodge.img|SIMG_MONSTER

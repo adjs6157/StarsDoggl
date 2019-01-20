@@ -1,0 +1,6 @@
+sprite/monster/stormofmetastasis/buff/blue.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/buff/buffglow.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/buff/bufficon.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/buff/green.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/buff/purple.img|SIMG_MONSTER
+sprite/monster/stormofmetastasis/buff/red.img|SIMG_MONSTER

@@ -1,0 +1,10 @@
+sprite/map/town/02_seria_gate/seria_gate_canyon.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_centralpark.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_eff.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_eff_dodge.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_eff_normal.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_gent.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_hendonmyre.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_noblesky.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_sainthorn.img|SIMG_PATHGATE
+sprite/map/town/02_seria_gate/seria_gate_underfoot.img|SIMG_PATHGATE

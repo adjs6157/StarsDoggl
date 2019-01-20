@@ -1,0 +1,17 @@
+sprite/monster/goblin/renewal/cowardgoblin.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblin.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinbombkagel.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinbullseye.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinbunkerworker.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinflaghillgab.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinflagseagab.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinhillgab.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinkagel.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinkinol.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinnightvision.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinnightvisionkagel.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinprag.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinseagab.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblintaskmaster.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinthrower.img|SIMG_MONSTER
+sprite/monster/goblin/renewal/goblinthrowertaskmaster.img|SIMG_MONSTER

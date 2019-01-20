@@ -1,0 +1,11 @@
+sprite/monster/abnova/criminal_ogre.img|SIMG_MONSTER
+sprite/monster/abnova/empire00.img|SIMG_MONSTER
+sprite/monster/abnova/empire01.img|SIMG_MONSTER
+sprite/monster/abnova/empire01_wp01_obj.img|SIMG_MONSTER
+sprite/monster/abnova/empire_niche.img|SIMG_MONSTER
+sprite/monster/abnova/hunterkobolt.img|SIMG_MONSTER
+sprite/monster/abnova/isabella.img|SIMG_MONSTER
+sprite/monster/abnova/rollrangboot_ogre.img|SIMG_MONSTER
+sprite/monster/abnova/seria.img|SIMG_MONSTER
+sprite/monster/abnova/tammer.img|SIMG_MONSTER
+sprite/monster/abnova/tammer_weapon.img|SIMG_MONSTER

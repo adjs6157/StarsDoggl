@@ -1,0 +1,6 @@
+sprite/map/town/04_elvengard/pathgate/gate_down.img|SIMG_PATHGATE
+sprite/map/town/04_elvengard/pathgate/gate_down_light.img|SIMG_PATHGATE
+sprite/map/town/04_elvengard/pathgate/gate_guild.img|SIMG_PATHGATE
+sprite/map/town/04_elvengard/pathgate/gate_guild_rank.img|SIMG_PATHGATE
+sprite/map/town/04_elvengard/pathgate/gate_up.img|SIMG_PATHGATE
+sprite/map/town/04_elvengard/pathgate/gate_up_light.img|SIMG_PATHGATE

@@ -1,0 +1,9 @@
+sprite/monster/goblin/passiveobject/arrow.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/event_nencast_g_red.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/event_nencast_red.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/event_nentan_b_red.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/event_nentan_s_red.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/kagelbomb.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/kagelsuriken.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/throwstone.img|SIMG_MONSTER
+sprite/monster/goblin/passiveobject/throwstonedestroy.img|SIMG_MONSTER

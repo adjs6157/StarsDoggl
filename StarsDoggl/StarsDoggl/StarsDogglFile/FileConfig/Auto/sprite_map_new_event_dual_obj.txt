@@ -1,0 +1,14 @@
+sprite/map/new_event/dual/obj/barricade.img|SIMG_NONE
+sprite/map/new_event/dual/obj/brokenhouse.img|SIMG_NONE
+sprite/map/new_event/dual/obj/fardistance.img|SIMG_NONE
+sprite/map/new_event/dual/obj/fence.img|SIMG_NONE
+sprite/map/new_event/dual/obj/heavysmoke.img|SIMG_NONE
+sprite/map/new_event/dual/obj/imperial_palace_gate.img|SIMG_NONE
+sprite/map/new_event/dual/obj/imperial_palace_gate_ex.img|SIMG_NONE
+sprite/map/new_event/dual/obj/middledistance.img|SIMG_NONE
+sprite/map/new_event/dual/obj/pole.img|SIMG_NONE
+sprite/map/new_event/dual/obj/polechip.img|SIMG_NONE
+sprite/map/new_event/dual/obj/smallsmoke.img|SIMG_NONE
+sprite/map/new_event/dual/obj/treasurechest.img|SIMG_NONE
+sprite/map/new_event/dual/obj/tree.img|SIMG_NONE
+sprite/map/new_event/dual/obj/treechip.img|SIMG_NONE

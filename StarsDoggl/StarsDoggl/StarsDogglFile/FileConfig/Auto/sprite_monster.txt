@@ -1,0 +1,8 @@
+sprite/monster/ch_monsterface.img|SIMG_MONSTER
+sprite/monster/flyingmonstermark.img|SIMG_MONSTER
+sprite/monster/flyingmonstermark2.img|SIMG_MONSTER
+sprite/monster/monsterface.img|SIMG_MONSTER
+sprite/monster/monsterface_jp.img|SIMG_MONSTER
+sprite/monster/monsterface_univ.img|SIMG_MONSTER
+sprite/monster/summonmonstermark.img|SIMG_MONSTER
+sprite/monster/wkingumtara.img|SIMG_MONSTER

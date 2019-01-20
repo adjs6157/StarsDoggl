@@ -1,0 +1,6 @@
+sprite/map/cataclysm/granflores/grakqarak/pathgate/bossgate_down.img|SIMG_PATHGATE
+sprite/map/cataclysm/granflores/grakqarak/pathgate/bossgate_side.img|SIMG_PATHGATE
+sprite/map/cataclysm/granflores/grakqarak/pathgate/bossgate_up.img|SIMG_PATHGATE
+sprite/map/cataclysm/granflores/grakqarak/pathgate/gate_down.img|SIMG_PATHGATE
+sprite/map/cataclysm/granflores/grakqarak/pathgate/gate_side.img|SIMG_PATHGATE
+sprite/map/cataclysm/granflores/grakqarak/pathgate/gate_up.img|SIMG_PATHGATE

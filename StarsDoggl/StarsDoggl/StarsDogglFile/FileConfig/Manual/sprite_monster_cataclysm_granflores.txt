@@ -1,0 +1,3 @@
+sprite/monster/cataclysm/granflores/ghoulgwish.img|SIMG_MONSTER
+sprite/monster/cataclysm/granflores/seria_quest.img|SIMG_MONSTER
+sprite/monster/cataclysm/granflores/tobi.img|SIMG_MONSTER

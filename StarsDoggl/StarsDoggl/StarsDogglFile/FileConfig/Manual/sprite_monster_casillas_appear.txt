@@ -1,0 +1,7 @@
+sprite/monster/casillas/appear/dodge.img|SIMG_MONSTER
+sprite/monster/casillas/appear/normal-b.img|SIMG_MONSTER
+sprite/monster/casillas/appear/normal.img|SIMG_MONSTER
+sprite/monster/casillas/appear/p-01.img|SIMG_MONSTER
+sprite/monster/casillas/appear/p-02.img|SIMG_MONSTER
+sprite/monster/casillas/appear/p-03.img|SIMG_MONSTER
+sprite/monster/casillas/appear/p-04.img|SIMG_MONSTER

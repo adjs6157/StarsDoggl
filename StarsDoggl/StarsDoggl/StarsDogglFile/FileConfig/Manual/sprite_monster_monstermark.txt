@@ -1,0 +1,3 @@
+sprite/monster/monstermark/dg_body.img|SIMG_MONSTER
+sprite/monster/monstermark/glow.img|SIMG_MONSTER
+sprite/monster/monstermark/no_body.img|SIMG_MONSTER

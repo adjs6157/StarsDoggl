@@ -1,0 +1,6 @@
+sprite/monster/event/chn_event_160630_dungeon_and_foodfighter/chef_monster.img|SIMG_MONSTER
+sprite/monster/event/chn_event_160630_dungeon_and_foodfighter/effect_blue.img|SIMG_MONSTER
+sprite/monster/event/chn_event_160630_dungeon_and_foodfighter/effect_red.img|SIMG_MONSTER
+sprite/monster/event/chn_event_160630_dungeon_and_foodfighter/effect_yellow.img|SIMG_MONSTER
+sprite/monster/event/chn_event_160630_dungeon_and_foodfighter/main_object.img|SIMG_MONSTER
+sprite/monster/event/chn_event_160630_dungeon_and_foodfighter/monster_smoke.img|SIMG_MONSTER

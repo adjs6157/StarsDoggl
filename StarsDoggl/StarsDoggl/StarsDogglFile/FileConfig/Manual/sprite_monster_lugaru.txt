@@ -1,0 +1,12 @@
+sprite/monster/lugaru/akaru.img|SIMG_MONSTER
+sprite/monster/lugaru/blacklugaru.img|SIMG_MONSTER
+sprite/monster/lugaru/bloodlugaru.img|SIMG_MONSTER
+sprite/monster/lugaru/casting.img|SIMG_MONSTER
+sprite/monster/lugaru/ciel.img|SIMG_MONSTER
+sprite/monster/lugaru/ciel_tail.img|SIMG_MONSTER
+sprite/monster/lugaru/enchant.img|SIMG_MONSTER
+sprite/monster/lugaru/heart.img|SIMG_MONSTER
+sprite/monster/lugaru/lugaru.img|SIMG_MONSTER
+sprite/monster/lugaru/penril.img|SIMG_MONSTER
+sprite/monster/lugaru/ral.img|SIMG_MONSTER
+sprite/monster/lugaru/whitelugaru.img|SIMG_MONSTER

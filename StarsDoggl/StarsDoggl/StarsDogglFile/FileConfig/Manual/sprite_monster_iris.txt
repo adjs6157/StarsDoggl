@@ -1,0 +1,13 @@
+sprite/monster/iris/00_floor_normal.img|SIMG_MONSTER
+sprite/monster/iris/01_floor_dodge.img|SIMG_MONSTER
+sprite/monster/iris/02_cast_noraml.img|SIMG_MONSTER
+sprite/monster/iris/03_cast_dodge.img|SIMG_MONSTER
+sprite/monster/iris/04_fire_normal.img|SIMG_MONSTER
+sprite/monster/iris/05_fire_dodge.img|SIMG_MONSTER
+sprite/monster/iris/die.img|SIMG_MONSTER
+sprite/monster/iris/iris_body.img|SIMG_MONSTER
+sprite/monster/iris/iris_skill_effect_b.img|SIMG_MONSTER
+sprite/monster/iris/iris_skill_effect_f.img|SIMG_MONSTER
+sprite/monster/iris/iris_w.img|SIMG_MONSTER
+sprite/monster/iris/paper_dodge.img|SIMG_MONSTER
+sprite/monster/iris/paper_normal.img|SIMG_MONSTER
