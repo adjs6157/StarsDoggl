@@ -11,6 +11,13 @@ int iScreenShotHeight;
 
 #define BACK_COLOR 0xFFFF00FF
 
+#define COLOR_A(color)	(color >> 24)		& 0x000000FF
+#define COLOR_R(color)	(color >> 16)		& 0x000000FF
+#define COLOR_G(color)	(color >> 8)		& 0x000000FF
+#define COLOR_B(color)	color				& 0x000000FF
+
+
+
 extern void PrintLog(const char *format, ...);
 StarsGraphy::StarsGraphy()
 {
@@ -77,10 +84,10 @@ bool biggerSort(std::vector<cv::Point> v1, std::vector<cv::Point> v2)
 
 void StarsGraphy::Update(const ST_RECT& kGameRect)
 {
-	if (timeGetTime() - m_iLastUpdateTime < 300)
-	{
-		return;
-	}
+	//if (timeGetTime() - m_iLastUpdateTime < 300)
+	//{
+	//	return;
+	//}
 
 	m_iLastUpdateTime = timeGetTime();
 
@@ -487,6 +494,51 @@ DWORD StarsGraphy::GetColor(ST_POS kPos)
 	{
 		return 0;
 	}
+}
+
+void StarsGraphy::SaveSpecialRandPoint()
+{
+	const int aiDir[8][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } };
+	srand(timeGetTime());
+	for (int i = 0; i < SPECIAL_POS_NUM; ++i)
+	{
+		bool bFind = false;
+		while (!bFind)
+		{
+			int iPosX = rand() % iScreenShotWidth;
+			if (iPosX <= 0) iPosX = 2; if (iPosX >= iScreenShotWidth - 1) iPosX = iScreenShotWidth - 3;
+			int iPosY = rand() % iScreenShotHeight;
+			if (iPosY <= 0) iPosY = 2; if (iPosY >= iScreenShotHeight - 1) iPosY = iScreenShotHeight - 3;
+
+			int iCurColor = m_pkScreenShotData[iPosY * iScreenShotWidth + iPosX];
+			int iColorR = COLOR_R(iCurColor);
+			int iColorG = COLOR_G(iCurColor);
+			int iColorB = COLOR_B(iCurColor);
+
+			int iColorNoEqualCount = 0;
+			int iTempColor;
+			for (int j = 0; j < 8; ++j)
+			{
+				iTempColor = m_pkScreenShotData[(iPosY + aiDir[j][1]) * iScreenShotWidth + (iPosX + aiDir[j][0])];
+				if (iTempColor != iCurColor) iColorNoEqualCount++;
+				iColorR += COLOR_R(iTempColor);
+				iColorG += COLOR_G(iTempColor);
+				iColorB += COLOR_B(iTempColor);
+			}
+
+			if (iColorNoEqualCount >= 4)
+			{
+				bFind = true;
+				m_akSpecialPos[i] = ST_POS(iPosX, iPosY);
+				m_aiSpecialPosColor[i] = (iColorR / 9) << 16 + (iColorG / 9) << 8 + iColorB / 9;
+			}
+		}
+	}
+}
+
+ST_POS StarsGraphy::GetSpecialPointOff()
+{
+
 }
 
 void StarsGraphy::LoadLocalPicture()

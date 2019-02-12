@@ -620,7 +620,7 @@ void StarsGamePlayer::UpdateMiniMapState()
 				ST_RECT kCurPoint = akQueue[iCurIndex];
 				iCurIndex++;
 
-				for (int k = 0; k < 4; ++k)
+				for (int k = 0; k < 4; ++k) 
 				{
 					kTempPoint.left = aiDir[k][0] + kCurPoint.left;
 					kTempPoint.right = aiDir[k][1] + kCurPoint.right;

@@ -9,6 +9,7 @@
 #include <opencv2/imgproc/imgproc.hpp> 
 #include <opencv2/features2d/features2d.hpp>
 
+#define SPECIAL_POS_NUM 5
 
 struct GamePictureInfo
 {
@@ -85,6 +86,8 @@ public:
 	ST_POS FindFont(const std::string& kStr, ST_RECT kRect);
 	ST_POS FindColor(DWORD dwColor, ST_RECT kRect, bool bFindColorBlock = true, ST_POS kStartPos = ST_POS(-1, -1));
 	DWORD GetColor(ST_POS kPos);
+	void SaveSpecialRandPoint();
+	ST_POS GetSpecialPointOff();
 	
 private:
 	void CheckRect(ST_RECT& kRect);
@@ -114,4 +117,6 @@ private:
 	ST_POS* m_akQueue;
 	int	m_iQueueIndex;
 	int m_iQueueNum;
+	ST_POS m_akSpecialPos[SPECIAL_POS_NUM];
+	DWORD m_aiSpecialPosColor[SPECIAL_POS_NUM];
 };
