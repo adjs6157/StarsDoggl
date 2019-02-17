@@ -538,7 +538,7 @@ void StarsGraphy::SaveSpecialRandPoint()
 
 ST_POS StarsGraphy::GetSpecialPointOff()
 {
-
+	return ST_POS();
 }
 
 void StarsGraphy::LoadLocalPicture()

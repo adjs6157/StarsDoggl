@@ -100,8 +100,10 @@ void StarsGamePlayer::Update()
 		}
 		
 	}
-	
 
+	//m_pkStarsControl->OnKeyDown(VK_DOWN);
+	//Sleep(30);
+	//m_pkStarsControl->OnKeyUp(VK_DOWN);
 	m_pkStarsGraphy->Update(m_kGameRect);
 	m_pkStarsControl->Update();
 	
@@ -382,8 +384,131 @@ void StarsGamePlayer::SetSceneState(StarsSceneState eState)
 	m_eSceneState = eState;
 }
 
+#define BLOCK_SIZE 30.0f // 阻挡块大小
+
+bool StarsGamePlayer::IsDirectArrive(const ST_POS& kStartPos, const ST_POS& kEndPos)
+{
+	float fDis = GetDistance(kStartPos.x, kStartPos.y, kEndPos.x, kEndPos.y);
+	int iCount = fDis / BLOCK_SIZE;
+	if (iCount <= 0)
+	{
+		return true;
+	}
+	float fDifX = (kEndPos.x - kStartPos.x) / iCount;
+	float fDifY = (kEndPos.y - kStartPos.y) / iCount;
+
+	float fTempX = kStartPos.x;
+	float fTempY = kStartPos.y;
+	for (int i = 0; i < iCount; ++i)
+	{
+		if (m_pkStarsGraphy->GetColor(ST_POS(fTempX, fTempY)) == 0xFFFF0000)
+		{
+			return false;
+		}
+		fTempX += fDifX;
+		fTempY += fDifY;
+	}
+	return true;
+}
+
+ST_POS StarsGamePlayer::FindPath(const ST_POS& kStartPos, const ST_POS& kEndPos)
+{
+	// 可以直接到达
+	if (IsDirectArrive(kStartPos, kEndPos))
+	{
+		return kEndPos;
+	}
+
+	// 递归查找路径
+	std::vector<ST_RECT> akQueue;
+	int iCurIndex = 0;
+	bool bVisited[100][100];
+	int iStartPosX = kStartPos.x / BLOCK_SIZE;
+	int iStartPosY = kStartPos.y / BLOCK_SIZE;
+	int iEndPosX = kEndPos.x / BLOCK_SIZE;
+	int iEndPosY = kEndPos.y / BLOCK_SIZE;
+	const int aiDir[4][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+	memset(bVisited, 0, 100 * 100);
+	bVisited[iStartPosX][iStartPosY] = true;
+	akQueue.push_back(ST_RECT(iStartPosX, iStartPosY, -1, -1));
+	bool bFindPath = false;
+
+	ST_RECT kTempPoint;
+	while (iCurIndex < akQueue.size())
+	{
+		ST_RECT kCurPoint = akQueue[iCurIndex];
+		iCurIndex++;
+
+		for (int k = 0; k < 4; ++k)
+		{
+			kTempPoint.left = aiDir[k][0] + kCurPoint.left;
+			kTempPoint.right = aiDir[k][1] + kCurPoint.right;
+			if (kTempPoint.left >= 0 && kTempPoint.left < 100 && kTempPoint.right >= 0 && kTempPoint.right < 100 && !bVisited[kTempPoint.left][kTempPoint.right])
+			{
+				bVisited[kTempPoint.left][kTempPoint.right] = true;
+				
+				if (m_pkStarsGraphy->GetColor(ST_POS(kTempPoint.left * BLOCK_SIZE, kTempPoint.right * BLOCK_SIZE)) != COLOR_BLOCK)
+				{
+					kTempPoint.bottom = iCurIndex - 1;
+					akQueue.push_back(kTempPoint);
+					
+					if (kTempPoint.left == kEndPos.x && kTempPoint.right == kEndPos.y)
+					{
+						bFindPath = true;
+						PrintLog("bFindPath");
+						break;
+					}
+				}
+			}
+		}
+		if (bFindPath)
+		{
+			break;
+		}
+	}
+
+	int iMinDis = 9999;
+	int iMinDisIndex = akQueue.size() - 1;
+	if (!bFindPath)	// 没寻路到目标点就找最近的
+	{
+		for (int i = 0; i < akQueue.size(); ++i)
+		{
+			int iTempDisToEnd = abs(akQueue[i].left - iEndPosX) + abs(akQueue[i].right - iEndPosY);
+			if (iTempDisToEnd < iMinDis)
+			{
+				iMinDis = iTempDisToEnd;
+				iMinDisIndex = i;
+			}
+		}
+	}
+	else // 找到了最后一个点就是目标点
+	{
+		iMinDisIndex = akQueue.size() - 1;
+	}
+	PrintLog("iMinDisIndex:%d", iMinDisIndex);
+	while (akQueue[iMinDisIndex].bottom != -1)
+	{
+		// 找到第一个可以直线到达的点
+		if (IsDirectArrive(kStartPos, ST_POS(akQueue[iMinDisIndex].left * BLOCK_SIZE, akQueue[iMinDisIndex].right * BLOCK_SIZE)))
+		{
+			break;
+		}
+		iMinDisIndex = akQueue[iMinDisIndex].bottom;
+	}
+	PrintLog("FindPathPos:%d, %d", akQueue[iMinDisIndex].left * BLOCK_SIZE, akQueue[iMinDisIndex].right * BLOCK_SIZE);
+	return ST_POS(akQueue[iMinDisIndex].left * BLOCK_SIZE, akQueue[iMinDisIndex].right * BLOCK_SIZE);
+}
+
 void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
 {
+	ST_POS kPathRet;
+	if ((fDisX != 0 || fDisY != 0) && (fabs(fDisX) > 30 || fabs(fDisY) > 30))
+	{
+		kPathRet = FindPath(m_kPlayerPos, ST_POS(m_kPlayerPos.x + fDisX, m_kPlayerPos.y + fDisY));
+		fDisX = kPathRet.x - m_kPlayerPos.x;
+		fDisY = kPathRet.y - m_kPlayerPos.y;
+	}
+	
 	if (fDisX != 0)
 	{
 		StarsRunDirection eTmepLeftRight = fDisX > 0 ? StarsRunDirection_Right : StarsRunDirection_Left;
@@ -633,11 +758,11 @@ void StarsGamePlayer::UpdateMiniMapState()
 							DWORD dwTempColor = m_pkStarsGraphy->GetColor(ST_POS(iStartPosX + (kCurPoint.left - 25) * 18 + aiDir[k][0] * 18, iStartPosY + (kCurPoint.right - 25) * 18 + aiDir[k][1] * 18));
 							if (dwTempColor == COLOR_ROOM_CLOSE || dwTempColor == COLOR_ROOM_OPEN)
 							{
-								kTempPoint.top = 1;
+								kTempPoint.top = 1;	// 1代表房间
 							}
 							else
 							{
-								kTempPoint.top = 2;
+								kTempPoint.top = 2;	// 2代表小地图问号，未知的房间
 							}
 							kTempPoint.bottom = iCurIndex - 1;
 							akQueue.push_back(kTempPoint);

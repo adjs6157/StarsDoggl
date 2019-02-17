@@ -55,6 +55,8 @@ public:
 
 	void SetSceneState(StarsSceneState eState);
 private:
+	bool IsDirectArrive(const ST_POS& kStartPos, const ST_POS& kEndPos);
+	ST_POS FindPath(const ST_POS& kStartPos, const ST_POS& kEndPos);
 	void ActionRun(float fDisX, float fDisY);
 	void ActionStopRun(StarsRunDirection eDir);
 	void UpdateRun();
