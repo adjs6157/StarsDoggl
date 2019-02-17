@@ -256,7 +256,7 @@ void StarsGamePlayer::UpdateBattle()
 										  if (eDir == StarsRunDirection_Up || eDir == StarsRunDirection_Down)
 										  {
 											  ActionRun(kDoorPos.x - m_kPlayerPos.x, kDoorPos.y - m_kPlayerPos.y);
-											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 1300);
+											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 2500);
 											  m_eBattleState = StarsBattleState_GoNextRoom;
 											  SetUserDataInt("GoNextRoomBlock", 0);
 											  PrintLog("ChangeState:GoNextRoom");
@@ -265,7 +265,7 @@ void StarsGamePlayer::UpdateBattle()
 										  if (eDir == StarsRunDirection_Right && kDoorPos.x > 400 || eDir == StarsRunDirection_Left && kDoorPos.x < 400)
 										  {
 											  ActionRun(kDoorPos.x - m_kPlayerPos.x, kDoorPos.y - m_kPlayerPos.y);
-											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 1300);
+											  SetUserDataInt("GoDoorEndTime", (m_iLeftRightEndTime > m_iUpDownEndTime ? m_iLeftRightEndTime : m_iUpDownEndTime) + 2500);
 											  m_eBattleState = StarsBattleState_GoNextRoom;
 											  SetUserDataInt("GoNextRoomBlock", 0);
 											  PrintLog("ChangeState:GoNextRoom");
