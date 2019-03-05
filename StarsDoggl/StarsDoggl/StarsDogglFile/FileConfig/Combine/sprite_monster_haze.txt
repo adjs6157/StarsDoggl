@@ -12,8 +12,8 @@ sprite/monster/haze/death_squad.img|SIMG_MONSTER
 sprite/monster/haze/enjo.img|SIMG_MONSTER
 sprite/monster/haze/enjo_robot.img|SIMG_MONSTER
 sprite/monster/haze/floor.img|SIMG_MONSTER
-sprite/monster/haze/flooref.img|SIMG_MONSTER
 sprite/monster/haze/floor_dodge.img|SIMG_MONSTER
+sprite/monster/haze/flooref.img|SIMG_MONSTER
 sprite/monster/haze/gun_p.img|SIMG_MONSTER
 sprite/monster/haze/hass.img|SIMG_MONSTER
 sprite/monster/haze/humanhunter.img|SIMG_MONSTER

@@ -2,6 +2,9 @@ sprite/monster/impossible_bakal/ashcore.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/ashcore_fire_effect.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/attack_shield.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/attack_shield_hit.img|SIMG_MONSTER
+sprite/monster/impossible_bakal/b_b.img|SIMG_MONSTER
+sprite/monster/impossible_bakal/b_ds.img|SIMG_MONSTER
+sprite/monster/impossible_bakal/b_m.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/back_icedodge.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_anger.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_angerpaticle.img|SIMG_MONSTER
@@ -9,10 +12,10 @@ sprite/monster/impossible_bakal/bakal_attack.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_body_background.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_body_front.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_body_glow.img|SIMG_MONSTER
-sprite/monster/impossible_bakal/bakal_breathdown.img|SIMG_MONSTER
-sprite/monster/impossible_bakal/bakal_breathup.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_breath_p.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_breath_roop.img|SIMG_MONSTER
+sprite/monster/impossible_bakal/bakal_breathdown.img|SIMG_MONSTER
+sprite/monster/impossible_bakal/bakal_breathup.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_comein.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_die1.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bakal_die2.img|SIMG_MONSTER
@@ -46,9 +49,6 @@ sprite/monster/impossible_bakal/bomb02.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/bomb03.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/breathein.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/brokenguard.img|SIMG_MONSTER
-sprite/monster/impossible_bakal/b_b.img|SIMG_MONSTER
-sprite/monster/impossible_bakal/b_ds.img|SIMG_MONSTER
-sprite/monster/impossible_bakal/b_m.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/chargefire.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/cryforthedark.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/cryforthedark_end.img|SIMG_MONSTER
@@ -90,9 +90,9 @@ sprite/monster/impossible_bakal/itrenog_dent_hit.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/itrenog_dent_smog.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/itrenog_scratch.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/itrenog_shouting.img|SIMG_MONSTER
+sprite/monster/impossible_bakal/magic_circle.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/magiccirclebase.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/magiccircleblue.img|SIMG_MONSTER
-sprite/monster/impossible_bakal/magic_circle.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/monsterskill_bakal.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/monsterskill_rhythm.img|SIMG_MONSTER
 sprite/monster/impossible_bakal/nagor.img|SIMG_MONSTER

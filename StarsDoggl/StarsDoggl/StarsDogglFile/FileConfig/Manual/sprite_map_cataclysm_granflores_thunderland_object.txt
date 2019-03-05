@@ -16,8 +16,8 @@ sprite/map/cataclysm/granflores/thunderland/object/swamp_weed.img|SIMG_NONE
 sprite/map/cataclysm/granflores/thunderland/object/tile_obj.img|SIMG_NONE
 sprite/map/cataclysm/granflores/thunderland/object/tile_trail.img|SIMG_NONE
 sprite/map/cataclysm/granflores/thunderland/object/treasurebox.img|SIMG_NONE
-sprite/map/cataclysm/granflores/thunderland/object/tree.img|SIMG_NONE
+sprite/map/cataclysm/granflores/thunderland/object/tree.img|SIMG_BLOCK
 sprite/map/cataclysm/granflores/thunderland/object/tree_action_particle.img|SIMG_NONE
-sprite/map/cataclysm/granflores/thunderland/object/tree_backway.img|SIMG_NONE
+sprite/map/cataclysm/granflores/thunderland/object/tree_backway.img|SIMG_BLOCK
 sprite/map/cataclysm/granflores/thunderland/object/tree_fruit.img|SIMG_BLOCK
 sprite/map/cataclysm/granflores/thunderland/object/tree_slant.img|SIMG_BLOCK

@@ -62,8 +62,8 @@ sprite/monster/soceress/needle_big_dodge.img|SIMG_MONSTER
 sprite/monster/soceress/needle_small_dodge.img|SIMG_MONSTER
 sprite/monster/soceress/space_move1_dodge.img|SIMG_MONSTER
 sprite/monster/soceress/space_move2_dodge.img|SIMG_MONSTER
-sprite/monster/soceress/space_movec_dodge.img|SIMG_MONSTER
 sprite/monster/soceress/space_move_dodge.img|SIMG_MONSTER
+sprite/monster/soceress/space_movec_dodge.img|SIMG_MONSTER
 sprite/monster/soceress/summon.img|SIMG_MONSTER
 sprite/monster/soceress/sword_dodge.img|SIMG_MONSTER
 sprite/monster/soceress/sword_normal.img|SIMG_MONSTER
@@ -73,9 +73,9 @@ sprite/monster/soceress/time_slave.img|SIMG_MONSTER
 sprite/monster/soceress/vinoshu.img|SIMG_MONSTER
 sprite/monster/soceress/weapon01.img|SIMG_MONSTER
 sprite/monster/soceress/weapon02.img|SIMG_MONSTER
-sprite/monster/soceress/weaponfire.img|SIMG_MONSTER
-sprite/monster/soceress/weaponice.img|SIMG_MONSTER
 sprite/monster/soceress/weapon_a.img|SIMG_MONSTER
 sprite/monster/soceress/weapon_b.img|SIMG_MONSTER
+sprite/monster/soceress/weaponfire.img|SIMG_MONSTER
+sprite/monster/soceress/weaponice.img|SIMG_MONSTER
 sprite/monster/soceress/wedding_sister.img|SIMG_MONSTER
 sprite/monster/soceress/willy_normal_up.img|SIMG_MONSTER
