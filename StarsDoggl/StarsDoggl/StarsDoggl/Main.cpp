@@ -16,7 +16,7 @@ HINSTANCE			g_hInstance = 0;
 
 StarsGamePlayer g_kGamePlayer;
 HWND			g_iTargetGameHandle = 0;
-bool			g_bNoControl = false;
+bool			g_bDebugMode = false;
 
 HWND g_hButtonCurrPut = 0;
 HWND g_hButtonAltStopAttack = 0;
@@ -167,7 +167,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 BOOL CreateWnd(HINSTANCE hInstance)
 {
+	srand(timeGetTime());
 	CHAR acWindowClass[256] = "StarsDoggl";
+	sprintf_s(acWindowClass, "%d%d%dStarsDoggl%d%d%d", rand() % 10, rand() % 10, rand() % 10, rand() % 10, rand() % 10, rand() % 10);
 
 	WNDCLASSEX wcex;
 	wcex.cbSize = sizeof(WNDCLASSEX);
@@ -290,9 +292,9 @@ LONG WINAPI ExceptionFilter(LPEXCEPTION_POINTERS lpExceptionInfo)
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	if (strcmp(lpCmdLine, "NOCONTROL") == 0)
+	if (strcmp(lpCmdLine, "DEBUGMODE") == 0)
 	{
-		g_bNoControl = true;
+		g_bDebugMode = true;
 	}
 
 	if (!CreateWnd(hInstance))
@@ -345,7 +347,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		if (g_iTargetGameHandle == 0)
 		{
-			g_iTargetGameHandle = FindWindowA(NULL, "地下城与勇士");
+			if (g_bDebugMode)
+			{
+				g_iTargetGameHandle = FindWindowA(NULL, "Windows 7 x64 - VMware Workstation");
+			}
+			else
+			{
+				g_iTargetGameHandle = FindWindowA(NULL, "地下城与勇士");
+			}
 		}
 		g_kGamePlayer.Update();
 	}

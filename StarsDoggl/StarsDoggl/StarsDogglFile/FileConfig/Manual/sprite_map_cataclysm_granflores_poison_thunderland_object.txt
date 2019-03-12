@@ -17,8 +17,8 @@ sprite/map/cataclysm/granflores/poison_thunderland/object/tile_obj1.img|SIMG_NON
 sprite/map/cataclysm/granflores/poison_thunderland/object/tile_obj2.img|SIMG_NONE
 sprite/map/cataclysm/granflores/poison_thunderland/object/tile_trail.img|SIMG_NONE
 sprite/map/cataclysm/granflores/poison_thunderland/object/treasurebox.img|SIMG_NONE
-sprite/map/cataclysm/granflores/poison_thunderland/object/tree1.img|SIMG_BLOCK
+sprite/map/cataclysm/granflores/poison_thunderland/object/tree1.img|SIMG_NONE
 sprite/map/cataclysm/granflores/poison_thunderland/object/tree2.img|SIMG_BLOCK
-sprite/map/cataclysm/granflores/poison_thunderland/object/tree_backway.img|SIMG_BLOCK
+sprite/map/cataclysm/granflores/poison_thunderland/object/tree_backway.img|SIMG_NONE
 sprite/map/cataclysm/granflores/poison_thunderland/object/tree_fruit.img|SIMG_BLOCK
 sprite/map/cataclysm/granflores/poison_thunderland/object/tree_fruit_particle.img|SIMG_NONE
