@@ -41,6 +41,8 @@ StarsGamePlayer::StarsGamePlayer()
 	m_ePlayerSide = StarsRunDirection_Left;
 	m_iCantFindNameCount = 0;
 	m_iPlayerNotMoveCount = 0;
+	m_bUseUltimateSpell = false;
+	m_iLastUpdateSpell = 0;
 }
 
 StarsGamePlayer::~StarsGamePlayer()
@@ -170,7 +172,7 @@ void StarsGamePlayer::UpdateBattle()
 		return;
 	}
 
-	if (timeGetTime() - m_iLastUpdaetPlayerPos > 100)
+	if (timeGetTime() - m_iLastUpdaetPlayerPos > 50)
 	{
 		m_iLastUpdaetPlayerPos = timeGetTime();
 		m_kLastPlayerPos = m_kPlayerPos;
@@ -212,9 +214,24 @@ void StarsGamePlayer::UpdateBattle()
 		}
 
 		m_kNearBOSSPos = FindBOSS(ST_RECT(m_kGameRect.left, m_kGameRect.right, m_kGameRect.top + 155, m_kGameRect.bottom - 50), ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
-		m_kNearMonsterPos = FindMonster(ST_RECT(m_kGameRect.left, m_kGameRect.right, m_kGameRect.top + 155, m_kGameRect.bottom - 50), ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
+		if (m_kNearBOSSPos.x != -1)
+		{
+			m_kNearMonsterPos = m_kNearBOSSPos;
+		}
+		else
+		{
+			m_kNearMonsterPos = FindMonster(ST_RECT(m_kGameRect.left, m_kGameRect.right, m_kGameRect.top + 155, m_kGameRect.bottom - 50), ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
+		}
 		m_kItemPos = FindItem(ST_RECT(m_kGameRect.left, m_kGameRect.right, m_kGameRect.top + 155, m_kGameRect.bottom - 50), ST_POS(m_kPlayerPos.x + m_kGameRect.left, m_kPlayerPos.y + m_kGameRect.top));
 	}
+
+	// 一秒更新一下技能CD
+	if (timeGetTime() - m_iLastUpdateSpell > 1000)
+	{
+		m_iLastUpdateSpell = timeGetTime();
+		UpdateSpellCD();
+	}
+
 	UpdateMiniMapState();
 	if (GetUserDataInt("iMiniMapState") == 3 && m_kItemPos.x == -1 && m_kItemPos.y == -1)
 	{
@@ -337,7 +354,12 @@ void StarsGamePlayer::UpdateBattle()
 										   else
 										   {
 											   ActionRun(0, 0);
-											   ActionAttack(true);
+											   if (GetUserDataInt("bIsBossRoom") == 1 && m_kNearBOSSPos.x != -1 || !m_bUseUltimateSpell)
+											   {
+												   m_bUseUltimateSpell = true;
+												   ActionUseSpell(true);
+											   }
+											   ActionAttack(true, false);
 											   PrintLog("AttackMonster::%d,%d", m_kNearMonsterPos.x, m_kNearMonsterPos.y);
 										   }
 										   break;
@@ -373,10 +395,7 @@ void StarsGamePlayer::UpdateBattle()
 									  {
 										  ActionRun(0, 0);
 										  Sleep(KEY_SLEEP_TIME * 2);
-										  m_pkStarsControl->OnKeyDown('X');
-										  Sleep(KEY_SLEEP_TIME);
-										  m_pkStarsControl->OnKeyUp('X');
-										  Sleep(KEY_SLEEP_TIME);
+										  ActionAttack(true, false);
 									  }
 									break;
 	}
@@ -789,7 +808,7 @@ ST_POS StarsGamePlayer::FindPath(ST_POS kStartPos, ST_POS kEndPos)
 	PrintLog("FindPathPos:%d, %d", (int)(akQueue[iMinDisIndex].left * BLOCK_SIZE), (int)(akQueue[iMinDisIndex].right * BLOCK_SIZE));
 	return ST_POS(akQueue[iMinDisIndex].left * BLOCK_SIZE - m_kGameRect.left, akQueue[iMinDisIndex].right * BLOCK_SIZE - m_kGameRect.top);
 }
-
+ 
 void StarsGamePlayer::ActionRun(float fDisX, float fDisY)
 {
 	ST_POS kObjectPos = FindObject(ST_RECT(m_kPlayerPos.x + m_kGameRect.left - 30, m_kPlayerPos.x + m_kGameRect.left + 30, m_kPlayerPos.y + m_kGameRect.top - 30, m_kPlayerPos.y + m_kGameRect.top + 30),
@@ -977,12 +996,55 @@ void StarsGamePlayer::UpdateRun()
 	}
 }
 
-void StarsGamePlayer::ActionAttack(bool bStart)
+// bUltimate使用高伤害技能
+void StarsGamePlayer::ActionUseSpell(bool bUltimate)
+{
+	if (!bUltimate)
+	{
+		/*if (zcanuse)
+		{
+			m_pkStarsControl->OnKeyDown('Z');
+			Sleep(KEY_SLEEP_TIME);
+			m_pkStarsControl->OnKeyUp('Z');
+			Sleep(KEY_SLEEP_TIME);
+		}
+		else if (Acanuse)
+		{
+			m_pkStarsControl->OnKeyDown('A');
+			Sleep(KEY_SLEEP_TIME);
+			m_pkStarsControl->OnKeyUp('A');
+			Sleep(KEY_SLEEP_TIME);
+		}*/
+	}
+	else
+	{
+		//for (q to y)
+		//{
+		//	m_pkStarsControl->OnKeyDown('A');
+		//	Sleep(KEY_SLEEP_TIME);
+		//	m_pkStarsControl->OnKeyUp('A');
+		//	Sleep(KEY_SLEEP_TIME);
+		//}
+	}
+}
+
+void StarsGamePlayer::ActionAttack(bool bStart, bool bRepeat)
 {
 	m_bStartAttack = bStart;
 	if (bStart)
 	{
-		m_iEndAttackTime = timeGetTime() + 3000;
+		if (bRepeat)
+		{
+			m_iEndAttackTime = timeGetTime() + 3000;
+		}
+		else
+		{
+			m_pkStarsControl->OnKeyDown('X');
+			Sleep(KEY_SLEEP_TIME);
+			m_pkStarsControl->OnKeyUp('X');
+			Sleep(KEY_SLEEP_TIME);
+		}
+		ActionUseSpell(false);
 	}
 	else
 	{
@@ -1014,10 +1076,18 @@ void StarsGamePlayer::UpdateAttack()
 		Sleep(KEY_SLEEP_TIME);
 		m_pkStarsControl->OnKeyUp('X');
 		Sleep(KEY_SLEEP_TIME);
-		m_pkStarsControl->OnKeyDown(VK_SPACE);
-		Sleep(KEY_SLEEP_TIME);
-		m_pkStarsControl->OnKeyUp(VK_SPACE);
-		Sleep(KEY_SLEEP_TIME);
+	}
+}
+
+void StarsGamePlayer::UpdateSpellCD()
+{
+	for (int i = 0; i < 12; ++i)
+	{
+		ST_POS kSpellPos = FindPicture("spell.bmp", ST_RECT(m_kGameRect.right - 450, m_kGameRect.right, m_kGameRect.bottom - 180, m_kGameRect.bottom), false);
+		if (kSpellPos.x != -1)
+		{
+
+		}
 	}
 }
 
@@ -1072,6 +1142,7 @@ void StarsGamePlayer::UpdateMiniMapState()
 
 		if (FindPlayerMiniMapPos())
 		{
+			m_bUseUltimateSpell = false;
 			iMiniMapState = 1;
 			PrintLog("iMiniMapState:1");
 		}

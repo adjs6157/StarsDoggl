@@ -39,6 +39,15 @@ enum StarsRunDirection
 	StarsRunDirection_Down,
 };
 
+struct StarsSpellInfo
+{
+	int iBeginX;
+	int iBeginY;
+	std::string kIconName;
+	int iCmd;
+};
+
+// boos  技能CD监控直接用ICON匹配  写一个窗口移位器 位移定位 用一下设计模式触发器task 特殊AI流程考虑脚本 
 class StarsGamePlayer
 {
 public:
@@ -62,8 +71,10 @@ private:
 	void ActionRun(float fDisX, float fDisY);
 	void ActionStopRun(StarsRunDirection eDir);
 	void UpdateRun();
-	void ActionAttack(bool bStart);
+	void ActionUseSpell(bool bUltimate);
+	void ActionAttack(bool bStart, bool bRepeat = true;);
 	void UpdateAttack();
+	void UpdateSpellCD();
 	// 巡逻
 	void Patrol();
 	bool FindPlayerMiniMapPos();
@@ -102,4 +113,6 @@ private:
 	StarsRunDirection	m_ePlayerSide;
 	std::map<std::string, int> m_akUserDataInt;
 	std::map<std::string, float> m_akUserDataFloat;
+	bool				m_bUseUltimateSpell;
+	int					m_iLastUpdateSpell;
 };
