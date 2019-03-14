@@ -99,6 +99,7 @@ private:
 	void ComPareImageNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, GamePictureInfo& akGamePictureInfo);
 	ST_POS ComPareColorNormal(int iBeginX, int iEndX, int iBeginY, int iEndY, DWORD dwColor, bool bFindColorBlock = true, ST_POS kStartPos = ST_POS(-1, -1));
 	void CheckRect(ST_RECT& kRect, int iWidth, int iHeight);
+	DWORD GetSpecialColorEqual(int iPosX, int iPosY);
 private:
 	ScreenShotDDRAW* m_pkScreenShotDDRAW;
 	int m_iLastUpdateTime;

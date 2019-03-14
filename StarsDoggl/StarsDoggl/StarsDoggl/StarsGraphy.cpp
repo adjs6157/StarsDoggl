@@ -510,27 +510,13 @@ void StarsGraphy::SaveSpecialRandPoint()
 			int iPosY = rand() % iScreenShotHeight;
 			if (iPosY <= 0) iPosY = 2; if (iPosY >= iScreenShotHeight - 1) iPosY = iScreenShotHeight - 3;
 
-			int iCurColor = m_pkScreenShotData[iPosY * iScreenShotWidth + iPosX];
-			int iColorR = COLOR_R(iCurColor);
-			int iColorG = COLOR_G(iCurColor);
-			int iColorB = COLOR_B(iCurColor);
+			DWORD dwColorEqual = GetSpecialColorEqual(iPosX, iPosY);
 
-			int iColorNoEqualCount = 0;
-			int iTempColor;
-			for (int j = 0; j < 8; ++j)
-			{
-				iTempColor = m_pkScreenShotData[(iPosY + aiDir[j][1]) * iScreenShotWidth + (iPosX + aiDir[j][0])];
-				if (iTempColor != iCurColor) iColorNoEqualCount++;
-				iColorR += COLOR_R(iTempColor);
-				iColorG += COLOR_G(iTempColor);
-				iColorB += COLOR_B(iTempColor);
-			}
-
-			if (iColorNoEqualCount >= 4)
+			if (dwColorEqual > 0)
 			{
 				bFind = true;
 				m_akSpecialPos[i] = ST_POS(iPosX, iPosY);
-				m_aiSpecialPosColor[i] = (iColorR / 9) << 16 + (iColorG / 9) << 8 + iColorB / 9;
+				m_aiSpecialPosColor[i] = dwColorEqual;
 			}
 		}
 	}
@@ -538,7 +524,31 @@ void StarsGraphy::SaveSpecialRandPoint()
 
 ST_POS StarsGraphy::GetSpecialPointOff()
 {
+	DWORD dwEqualColor;
+	for (int i = 0; i < SPECIAL_POS_NUM; ++i)
+	{
+		int iBeginX = m_akSpecialPos[i].x - 120;
+		int iBeginY = m_akSpecialPos[i].y - 120;
+		int iEndX = m_akSpecialPos[i].x + 120;
+		int iEndY = m_akSpecialPos[i].y + 120;
 
+		if (iBeginX <= 0) iBeginX = 2; 
+		if (iEndX >= iScreenShotWidth - 1) iEndX = iScreenShotWidth - 3;
+		if (iBeginY <= 0) iBeginY = 2; 
+		if (iEndY >= iScreenShotHeight - 1) iEndY = iScreenShotHeight - 3;
+
+		for (int k = iBeginX; k < iEndX; ++k)
+		{
+			for (int l = iBeginY; l < iEndY; ++l)
+			{
+				dwEqualColor = GetSpecialColorEqual(k, l);
+				if (dwEqualColor == m_aiSpecialPosColor[i])
+				{
+
+				}
+			}
+		}
+	}
 }
 
 void StarsGraphy::LoadLocalPicture()
@@ -908,4 +918,30 @@ void StarsGraphy::CheckRect(ST_RECT& kRect, int iWidth, int iHeight)
 	if (kRect.right > iScreenShotWidth - iWidth) kRect.right = iScreenShotWidth - iWidth;
 	if (kRect.top < 0) kRect.top = 0;
 	if (kRect.bottom > iScreenShotHeight - iHeight) kRect.bottom = iScreenShotHeight - iHeight;
+}
+
+DWORD StarsGraphy::GetSpecialColorEqual(int iPosX, int iPosY)
+{
+	const int aiDir[8][2] = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }, { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } };
+	int iCurColor = m_pkScreenShotData[iPosY * iScreenShotWidth + iPosX];
+	int iColorR = COLOR_R(iCurColor);
+	int iColorG = COLOR_G(iCurColor);
+	int iColorB = COLOR_B(iCurColor);
+
+	int iColorNoEqualCount = 0;
+	int iTempColor;
+	for (int j = 0; j < 8; ++j)
+	{
+		iTempColor = m_pkScreenShotData[(iPosY + aiDir[j][1]) * iScreenShotWidth + (iPosX + aiDir[j][0])];
+		if (iTempColor != iCurColor) iColorNoEqualCount++;
+		iColorR += COLOR_R(iTempColor);
+		iColorG += COLOR_G(iTempColor);
+		iColorB += COLOR_B(iTempColor);
+	}
+
+	if (iColorNoEqualCount >= 4)
+	{
+		return (iColorR / 9) << 16 + (iColorG / 9) << 8 + iColorB / 9;
+	}
+	return 0;
 }
