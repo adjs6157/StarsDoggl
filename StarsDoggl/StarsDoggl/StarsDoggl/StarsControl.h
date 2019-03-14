@@ -11,4 +11,6 @@ public:
 	void Update();
 	void OnKeyDown(DWORD dwKey);
 	void OnKeyUp(DWORD dwKey);
+private:
+	HWND m_iVirtualMatchHandle;
 };

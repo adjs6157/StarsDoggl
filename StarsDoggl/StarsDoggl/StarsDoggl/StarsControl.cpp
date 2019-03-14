@@ -7,7 +7,7 @@
 #define key_dat 0x60//键盘数据端口
 
 extern HWND g_iTargetGameHandle;
-extern bool g_bNoControl;
+extern bool g_bDebugMode;
 
 extern void PrintLog(const char *format, ...);
 
@@ -73,7 +73,7 @@ void MakeKeyUpEx(DWORD VirtualKey)
 	SetPortVal(key_dat, K_Break_Code, 1);
 }
 
-bool StopDNFDriver()
+bool OperateDNFDriver(bool bStop)
 {
 	SC_HANDLE hSCManager;
 	SC_HANDLE hService;
@@ -90,7 +90,16 @@ bool StopDNFDriver()
 
 		if (hService)
 		{
-			bResult = ControlService(hService, SERVICE_CONTROL_STOP, &ServiceStatus);
+			bResult = false;
+			if (!bStop)
+			{
+				bResult = StartService(hService, 0, NULL);//开始Service
+			}
+			else
+			{
+				bResult = ControlService(hService, SERVICE_CONTROL_STOP, &ServiceStatus);
+			}
+			
 			if (bResult)
 			{
 				PrintLog("ControlService成功:%u", GetLastError());
@@ -173,13 +182,20 @@ StarsControl::~StarsControl()
 
 bool StarsControl::Initalize()
 {
-	if (!g_bNoControl)
+	// 防止蓝屏这里关掉DNF驱动
+	OperateDNFDriver(true);
+	if (!InitializeWinIo())
 	{
-		StopDNFDriver();
-		if (!InitializeWinIo())
-		{
-			MessageBoxA(NULL, "WinIo初始化失败", "Warning", MB_OK);
-		}
+		MessageBoxA(NULL, "WinIo初始化失败", "Warning", MB_OK);
+	}
+	// 正式在开起来
+	if (!g_bDebugMode)
+	{
+		OperateDNFDriver(false);
+	}
+	else
+	{
+		m_iVirtualMatchHandle = FindWindowA(NULL, "Windows 7 x64 - VMware Workstation");
 	}
 	return true;
 }
@@ -199,10 +215,16 @@ void StarsControl::Update()
 
 void StarsControl::OnKeyDown(DWORD dwKey)
 {
-	if (g_bNoControl)
+	if (g_iTargetGameHandle != GetForegroundWindow())
 	{
 		return;
 	}
+
+	if (dwKey == VK_UP) dwKey = VK_NUMPAD5;
+	if (dwKey == VK_DOWN) dwKey = VK_NUMPAD2;
+	if (dwKey == VK_LEFT) dwKey = VK_NUMPAD1;
+	if (dwKey == VK_RIGHT) dwKey = VK_NUMPAD3;
+
 	if (dwKey >= VK_LEFT && dwKey <= VK_DOWN)
 	{
 		MakeKeyDownEx(dwKey);
@@ -215,10 +237,16 @@ void StarsControl::OnKeyDown(DWORD dwKey)
 
 void StarsControl::OnKeyUp(DWORD dwKey)
 {
-	if (g_bNoControl)
+	if (g_iTargetGameHandle != GetForegroundWindow())
 	{
 		return;
 	}
+
+	if (dwKey == VK_UP) dwKey = VK_NUMPAD5;
+	if (dwKey == VK_DOWN) dwKey = VK_NUMPAD2;
+	if (dwKey == VK_LEFT) dwKey = VK_NUMPAD1;
+	if (dwKey == VK_RIGHT) dwKey = VK_NUMPAD3;
+
 	if (dwKey >= VK_LEFT && dwKey <= VK_DOWN)
 	{
 		MakeKeyUpEx(dwKey);

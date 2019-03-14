@@ -9,16 +9,17 @@
 
 enum compressType{ COMP_NONE = 5, COMP_ZLIB = 6, COMP_ZLIB2 = 7, COMP_UDEF = 0 };
 enum colorFormat{ ARGB8888 = 0x10, ARGB4444 = 0x0F, ARGB1555 = 0x0E, LINK = 0x11, DDS_DXT1 = 0x12, DDS_DXT3 = 0x13, DDS_DXT5 = 0x14, COLOR_UDEF = 0, V4_FMT, RGB565 };
-enum starsImgType{ SIMG_NONE = 0, SIMG_MONSTER = 1, SIMG_OBJECT = 2, SIMG_BLOCK = 3, SIMG_PATHGATE = 4, SIMG_ITEM = 5 };
+enum starsImgType{ SIMG_NONE = 0, SIMG_MONSTER = 1, SIMG_OBJECT = 2, SIMG_BLOCK = 3, SIMG_PATHGATE = 4, SIMG_BACKGROUND = 5, SIMG_BOSS = 6};
 enum starsImgColor{ 
 	SCOLOR_NONE = 0, 
 	SCOLOR_MONSTER = 0xFFFF00FF, 
+	SCOLOR_BOSS = 0xFFFF00C8,
 	SCOLOR_OBJECT = 0xFFFFFF00, 
 	SCOLOR_BLOCK = 0xFFFF0000, 
 	SCOLOR_PATHGATE = 0xFF00FF00,
 	SCOLOR_PATHGATE_UP = 0xFF00EE00,
 	SCOLOR_PATHGATE_DOWN = 0xFF00DD00,
-	SCOLOR_ITEM = 0xFF00FF00, 
+	SCOLOR_ITEM = 0xFFFF8000, 
 	SCOLOR_MINIMAP = 0xFF0000EE, 
 	SCOLOR_MINIMAP_OPEN = 0xFF0000DD, 
 	SCOLOR_MINIMAP_UNKONW = 0xFF0000AA, 
@@ -69,6 +70,7 @@ struct NImgF_Index
 	int max_width;    // 整图的宽度
 	int max_height;   // 整图的高度，有此数据是为了对齐精灵
 	int iLinkNum;
+	void* pkData;
 };
 
 bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index>& akNpkIndex, unsigned char* dataSHA, std::vector<NImgF_Header>& akImgHeader, std::vector<std::vector<NImgF_Index>>& akImgIndex)
@@ -215,8 +217,15 @@ bool ReadNPKFile(std::string path, NPK_Header& kNpkHeader, std::vector<NPK_Index
 					fread(&iData, sizeof(int), 1, fp);
 					fread(&iData, sizeof(int), 1, fp);
 				}
-
+				//akImgIndex[i][j].pkData = malloc(akImgIndex[i][j].size);
 			}
+			/*for (int j = 0; j < akImgHeader[i].index_count; ++j)
+			{
+				if (akImgIndex[i][j].dwType != LINK)
+				{
+					fread(akImgIndex[i][j].pkData, akImgIndex[i][j].size, 1, fp);
+				}
+			}*/
 		}
 
 		///////////////
@@ -266,7 +275,7 @@ bool CheckNPKNameType(const std::string kPictureName, starsImgType eType)
 	switch (eType)
 	{
 	case SIMG_NONE:
-		return false;
+		return true;
 		break;
 	case SIMG_MONSTER:
 		kFilePreName = "sprite_monster";
@@ -282,8 +291,8 @@ bool CheckNPKNameType(const std::string kPictureName, starsImgType eType)
 		kFileEndName = "gate";
 		kFileEndName1 = "pathgate";
 		break;
-	case SIMG_ITEM:
-		return false;
+	case SIMG_BACKGROUND:
+		kFileEndName = "background";
 		break;
 	default:
 		break;
@@ -344,7 +353,7 @@ void OutPutAutoConfig(starsImgType eType)
 	{
 		printf("%d/%d\n", i, akPictureName.size());
 		std::string& kPictureName = akPictureName[i];
-		if (SIMG_NONE != eType)
+		//if (SIMG_NONE != eType)
 		{
 			if (!CheckNPKNameType(kPictureName, eType)) continue;
 		}
@@ -356,6 +365,7 @@ void OutPutAutoConfig(starsImgType eType)
 		ReadNPKFile(akPicturePath[i], kNpkHeader, akNpkIndex, dataSHA, akImgHeader, akImgIndex);
 
 		std::string kAutoConfitPath = "./FileConfig/Auto/";
+		if (SIMG_NONE == eType) kAutoConfitPath = "./FileConfig/Temp/";
 		kAutoConfitPath += kPictureName.substr(0, kPictureName.size() - 4);
 		kAutoConfitPath += ".txt";
 		FILE *fp = fopen(kAutoConfitPath.c_str(), "w+");
@@ -396,9 +406,11 @@ void OutPutAutoConfig(starsImgType eType)
 				fputs(kImgName.c_str(), fp);
 				fPass = true;
 			}
-			else if (eType == SIMG_ITEM)
+			else if (eType == SIMG_BACKGROUND)
 			{
-				
+				kImgName += "|SIMG_BACKGROUND\n";
+				fputs(kImgName.c_str(), fp);
+				fPass = true;
 			}
 			
 			if (!fPass)
@@ -417,7 +429,7 @@ void OutPutCombineConfig()
 	std::vector<std::string> akSplitStr;
 
 	std::map<std::string, std::map<std::string, std::string>> akImgComfig;
-	/*std::vector<std::string> akPicturePathAuto;
+	std::vector<std::string> akPicturePathAuto;
 	std::vector<std::string> akPictureNameAuto;
 	GetFiles("./FileConfig/Auto/", akPicturePathAuto, akPictureNameAuto);
 	for (int i = 0; i < akPicturePathAuto.size(); ++i)
@@ -438,7 +450,7 @@ void OutPutCombineConfig()
 			}
 		}
 		fclose(fp);
-	}*/
+	}
 	printf("%d/%d\n", 1, 3);
 	std::vector<std::string> akPicturePathManual;
 	std::vector<std::string> akPictureNameManual;
@@ -707,7 +719,7 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 	int iNpcCount = 0;
 	for (int i = 0; i < akPicturePathCombine.size(); ++i)
 	{
-		if (!CheckNPKNameType(akPictureNameCombine[i], eStarsImgTYpe)) continue;
+		//if (!CheckNPKNameType(akPictureNameCombine[i], eStarsImgTYpe)) continue;
 
 		FILE *fp = fopen(akPicturePathCombine[i].c_str(), "r+");
 		if (!fp)
@@ -768,6 +780,7 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 			printf("FileExport Faild!");
 			return;
 		}
+
 		// 计算文件大小
 		std::vector<std::string> akNameUncompress;
 		int iSizeOffset = 0;
@@ -781,6 +794,9 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 			{
 				if (j == 0)
 				{
+					if (akImgIndex[i][j].width < 5) akImgIndex[i][j].width = 100;
+					if (akImgIndex[i][j].height < 5) akImgIndex[i][j].height = 100;
+
 					akImgHeader[i].index_size += 4 * 9;
 					iSizeCount += 4 * 9;
 					iSizeCount += akImgIndex[i][j].width * akImgIndex[i][j].height * 4;
@@ -861,6 +877,11 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 						iMonsterHeight = akImgIndex[i][j].height - 35;
 						iTempColor = SCOLOR_MONSTER;
 					}
+					else if (kSImgType == "SIMG_BOSS")
+					{
+						iMonsterHeight = 0;
+						iTempColor = SCOLOR_BOSS;
+					}
 					else if (kSImgType == "SIMG_OBJECT")
 					{
 						iMonsterHeight = akImgIndex[i][j].height - 35;
@@ -891,10 +912,10 @@ void ExportNPKFiles(starsImgType eStarsImgTYpe)
 							iTempColor = SCOLOR_PATHGATE;
 						}
 					}
-					else if (kSImgType == "SIMG_ITEM")
+					else if (kSImgType == "SIMG_BACKGROUND")
 					{
 						iMonsterHeight = 0;
-						iTempColor = SCOLOR_ITEM;
+						iTempColor = SCOLOR_BLOCK;
 					}
 					else
 					{
@@ -1185,22 +1206,23 @@ int main()
 			if (a == '1')
 			{
 				printf("ExportAutoConfig\n");
+				printf("0:SIMG_NONE\n1:SIMG_MONSTER\n2:SIMG_OBJECT\n3:SIMG_BLOCK\n4:SIMG_PATHGATE\n5:SIMG_BACKGROUND\n");
 			}
 			else
 			{
 				printf("ExportNPKFiles\n");
 			}
-			printf("0:SIMG_NONE\n1:SIMG_MONSTER\n2:SIMG_OBJECT\n3:SIMG_BLOCK\n4:SIMG_PATHGATE\n5:SIMG_ITEM\n");
-			char b = getchar();
-			getchar();
+
 			if (a == '1')
 			{
+				char b = getchar();
+				getchar();
 				OutPutAutoConfig(starsImgType(b - '1' + 1));
 				printf("Done!\n");
 			}
 			else
 			{
-				ExportNPKFiles(starsImgType(b - '1' + 1));
+				ExportNPKFiles(SIMG_NONE);
 				printf("Done!\n");
 			}
 		}
@@ -1214,7 +1236,7 @@ int main()
 			ExportSpecialNPKFiles();
 			printf("Done!\n");
 		}
-		printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n");
+		printf("1:ExportAutoConfig\n2:CombineConfig\n3:ExportNPKFiles\n4:ExportSpecialNPKFiles\n");
 	}
 	return 0;
 }

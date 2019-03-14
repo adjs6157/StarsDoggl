@@ -17,9 +17,10 @@ enum StarsBattleState
 	StarsBattleState_FindMonster = 1,
 	StarsBattleState_GoMonster = 2,
 	StarsBattleState_AttackMonster = 3,
-	StarsBattleState_AllClear = 4,
-	StarsBattleState_FindDoor = 5,
-	StarsBattleState_GoNextRoom = 6,
+	StarsBattleState_PickItem = 4,
+	StarsBattleState_AllClear = 10,
+	StarsBattleState_FindDoor = 11,
+	StarsBattleState_GoNextRoom = 12,
 	StarsBattleState_Count,
 };
 
@@ -55,6 +56,9 @@ public:
 
 	void SetSceneState(StarsSceneState eState);
 private:
+	void ResetBattle();
+	bool IsDirectArrive(ST_POS kStartPos, ST_POS kEndPos);
+	ST_POS FindPath(ST_POS kStartPos, ST_POS kEndPos);
 	void ActionRun(float fDisX, float fDisY);
 	void ActionStopRun(StarsRunDirection eDir);
 	void UpdateRun();
@@ -62,9 +66,13 @@ private:
 	void UpdateAttack();
 	// Ñ²Âß
 	void Patrol();
+	bool FindPlayerMiniMapPos();
 	void UpdateMiniMapState();
 
+	ST_POS FindBOSS(const ST_RECT& kRect, ST_POS kStartPos);
 	ST_POS FindMonster(const ST_RECT& kRect, ST_POS kStartPos);
+	ST_POS FindItem(const ST_RECT& kRect, ST_POS kStartPos);
+	ST_POS FindObject(const ST_RECT& kRect, ST_POS kStartPos);
 	void SetUserDataInt(std::string kStr, int iValue);
 	int GetUserDataInt(std::string kStr);
 	void SetUserDataFloat(std::string kStr, float fValue);
@@ -82,9 +90,14 @@ private:
 	DWORD				m_iEndAttackTime;
 	ST_RECT				m_kGameRect;
 	ST_POS				m_kPlayerPos;
+	ST_POS				m_kLastPlayerPos;
+	int					m_iPlayerNotMoveCount;
 	ST_POS				m_kNearMonsterPos;
+	ST_POS				m_kNearBOSSPos;
+	ST_POS				m_kItemPos;
 	ST_POS				m_kNearDoorPos;
 	DWORD				m_iLastUpdaetPlayerPos;
+	int					m_iCantFindNameCount;
 	StarsSceneState		m_eSceneState;
 	StarsRunDirection	m_ePlayerSide;
 	std::map<std::string, int> m_akUserDataInt;
